@@ -8,9 +8,10 @@ type Props = {
   onCoinAnimationEnd?: () => void;
   coinOrigin?: { x: number; y: number } | null;
   coins: number;
+  level: number;
 };
 
-export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins }: Props) {
+export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins, level }: Props) {
   // Получаем позицию области очков
   const scoreRef = React.useRef<HTMLSpanElement>(null);
   const [target, setTarget] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -24,6 +25,8 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
 
   return (
     <div className="relative mt-4 mb-2 text-lg font-semibold flex items-center justify-center min-h-[40px]">
+      {/* Removed image to the left of Level */}
+      <span className="mr-8 text-blue-700 font-bold">Level: {level}</span>
       <AnimatePresence>
         {Array.from({ length: showCoin }).map((_, i) => {
           // fallback если нет координат
