@@ -1,4 +1,4 @@
-import { useState, forwardRef } from "react";
+import React, { useState, forwardRef } from "react";
 import { motion } from "framer-motion";
 import { Question } from "../App";
 
@@ -73,6 +73,9 @@ export function QuestionModal({ question, onAnswer, answered, onClose, modalRef 
               {selected === question.correct ? "Верно!" : "Неверно!"}
             </p>
             <p className="text-gray-600">{question.explanation}</p>
+            {question.rate && (
+              <p className="text-sm text-blue-700 mt-2">Рейт: {question.rate}</p>
+            )}
             <p className="text-xs text-gray-400 mt-2">Кликните вне окна, чтобы продолжить</p>
           </div>
         )}

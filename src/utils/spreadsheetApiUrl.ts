@@ -1,0 +1,1 @@
+export const SPREADSHEET_API_URL = "https://script.google.com/macros/s/AKfycbwtngogyvUF_LA-6IRe6r4dI21NEiJOWK2s1Cd49k6dgYToW8YTcHtEMjHqvnSErDKMew/exec";

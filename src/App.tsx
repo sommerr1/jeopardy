@@ -12,6 +12,7 @@ export type Question = {
   correct: string;
   options: string[];
   explanation: string;
+  rate?: number; // Добавлено поле рейт (может быть undefined)
 };
 
 export default function App() {
@@ -22,6 +23,8 @@ export default function App() {
   const [score, setScore] = useState(0);
   const [showCoin, setShowCoin] = useState(0);
   const [coinOrigin, setCoinOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [totalCoins, setTotalCoins] = useState(0);
+  const [wrongAnswers, setWrongAnswers] = useState<Question[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -39,8 +42,8 @@ export default function App() {
   const handleAnswer = (answer: string) => {
     if (!selected) return;
     const isCorrect = answer === selected.correct;
-    setAnswered((prev) => ({ ...prev, [selected.question]: true }));
-    setScore((s) => s + (isCorrect ? 1 : 0));
+    setAnswered((prev: { [key: string]: boolean }) => ({ ...prev, [selected.question]: true }));
+    setScore((s: number) => s + (isCorrect ? 1 : 0));
     if (isCorrect) {
       // Получаем координаты центра модалки
       if (modalRef.current) {
@@ -50,7 +53,12 @@ export default function App() {
           y: rect.top + rect.height / 2,
         });
       }
-      setShowCoin((c) => c + 1);
+      if (typeof selected?.rate === 'number' && !isNaN(selected.rate)) {
+        setShowCoin((c: number) => c + Math.floor(selected.rate! / 10));
+        setTotalCoins((prev) => prev + selected.rate!);
+      }
+    } else {
+      setWrongAnswers((prev) => [...prev, selected]);
     }
   };
 
@@ -59,7 +67,7 @@ export default function App() {
   };
 
   const handleCoinAnimationEnd = () => {
-    setShowCoin((c) => Math.max(0, c - 1));
+    setShowCoin((c: number) => Math.max(0, c - 1));
   };
 
   if (!started) return <WelcomeScreen onStart={handleStart} />;
@@ -72,11 +80,13 @@ export default function App() {
         showCoin={showCoin}
         onCoinAnimationEnd={handleCoinAnimationEnd}
         coinOrigin={coinOrigin}
+        coins={totalCoins}
       />
       <GameBoard
         questions={questions}
         answered={answered}
         onSelect={handleSelect}
+        wrongAnswers={wrongAnswers}
       />
       {selected && (
         <QuestionModal

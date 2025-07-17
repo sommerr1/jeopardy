@@ -3,7 +3,8 @@ const express = require('express');
 const fetch = require('node-fetch'); // npm install node-fetch@2
 const app = express();
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyvKRMoyi-9f3ZqTPR1HvVqAM6q2liuTSRJpqruKP0dxf7twTG7PIRAxs-ZrUWE8Ztd0w/exec';
+const { SPREADSHEET_API_URL: API_URL } = require('./src/utils/spreadsheetApiUrl.ts');
+// NOTE: Ссылка на API теперь вынесена в src/utils/spreadsheetApiUrl.ts/js для использования в TypeScript- и JS-коде.
 
 app.get('/api/questions', async (req, res) => {
   try {

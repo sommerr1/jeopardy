@@ -7,9 +7,10 @@ type Props = {
   showCoin?: number;
   onCoinAnimationEnd?: () => void;
   coinOrigin?: { x: number; y: number } | null;
+  coins: number;
 };
 
-export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin }: Props) {
+export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins }: Props) {
   // Получаем позицию области очков
   const scoreRef = React.useRef<HTMLSpanElement>(null);
   const [target, setTarget] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -53,7 +54,7 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
                 rotate: 720,
               }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 1, ease: "easeInOut", delay: i * 0.1 }}
+              transition={{ duration: 0.5, ease: "easeInOut", delay: i * 0.1 }}
               style={{ zIndex: 1000, pointerEvents: "none" }}
               onAnimationComplete={onCoinAnimationEnd}
             >
@@ -63,13 +64,17 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
                   boxShadow: "0 0 10px 2px #facc15, 0 0 0 2px #fbbf24 inset",
                 }}
               >
-                1
+                10
               </span>
             </motion.div>
           );
         })}
       </AnimatePresence>
-      <span ref={scoreRef}>Очки: {score} / {total}</span>
+      <span ref={scoreRef}>
+        Вопросы: {score} / {total}
+        {" "}
+        <span className="ml-4">Очки: {coins}</span>
+      </span>
     </div>
   );
 } 
