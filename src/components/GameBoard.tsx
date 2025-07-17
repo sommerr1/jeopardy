@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Question } from "../App";
 
 type Props = {
@@ -14,13 +14,28 @@ export function GameBoard({ questions, answered, onSelect, wrongAnswers = [] }: 
   const categories = Array.from(new Set(questions.map((q) => q.category)));
   const difficulties = Array.from(new Set(questions.map((q) => q.difficulty)));
 
+  const [totalCoins, setTotalCoins] = useState(0);
+  const pendingScoreRef = useRef(0);
+  const [showCoin, setShowCoin] = useState(0);
+
+  useEffect(() => {
+    if (showCoin === 0 && pendingScoreRef.current > 0) {
+      setTotalCoins((prev) => prev + pendingScoreRef.current);
+      pendingScoreRef.current = 0;
+    }
+  }, [showCoin]);
+
+  const handleCoinAnimationEnd = () => {
+    setShowCoin((c) => Math.max(0, c - 1));
+  };
+
   return (
     <div className="w-full max-w-3xl mt-8 flex">
       <div className="flex-1">
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-0">
           <div></div>
           {difficulties.map((d) => (
-            <div key={d} className="text-center font-bold">{d}</div>
+            <div key={d} className="flex justify-center font-bold items-center h-12">{d}</div>
           ))}
         </div>
         {categories.map((cat) => (
@@ -52,11 +67,17 @@ export function GameBoard({ questions, answered, onSelect, wrongAnswers = [] }: 
         ))}
       </div>
       <div className="w-72 ml-6 flex flex-col items-start">
-        <h3 className="text-lg font-bold mb-2">Ошибки</h3>
-        <div className="text-sm text-red-700">
+        <div className="text-sm">
           {wrongAnswers.length > 0
-            ? wrongAnswers.map((q) => `${q.options.find(opt => opt !== q.correct && !q.options.every(o => o === q.correct)) || '?'}(${q.correct})`).join(', ')
-            : 'Нет ошибок'}
+            ? wrongAnswers.map((q, idx) => {
+                const wrong = q.options.find(opt => opt !== q.correct && !q.options.every(o => o === q.correct)) || '?';
+                return (
+                  <span key={wrong + q.correct}>
+                    <span className="text-red-700">{wrong}</span>(<span className="text-green-700">{q.correct}</span>){idx < wrongAnswers.length - 1 ? ', ' : ''}
+                  </span>
+                );
+              })
+            : null}
         </div>
       </div>
     </div>

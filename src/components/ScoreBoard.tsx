@@ -54,7 +54,7 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
                 rotate: 720,
               }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeInOut", delay: i * 0.1 }}
+              transition={{ duration: 0.3, ease: "easeInOut", delay: i * 0.1 }}
               style={{ zIndex: 1000, pointerEvents: "none" }}
               onAnimationComplete={onCoinAnimationEnd}
             >

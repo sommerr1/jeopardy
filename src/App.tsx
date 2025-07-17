@@ -26,6 +26,7 @@ export default function App() {
   const [totalCoins, setTotalCoins] = useState(0);
   const [wrongAnswers, setWrongAnswers] = useState<Question[]>([]);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [pendingScore, setPendingScore] = useState(0);
 
   useEffect(() => {
     fetchQuestions().then(setQuestions);
@@ -34,6 +35,18 @@ export default function App() {
   useEffect(() => {
     console.log("ANSWERED STATE:", answered);
   }, [answered]);
+
+  useEffect(() => {
+    console.log("showCoin:", showCoin);
+  }, [showCoin]);
+
+  useEffect(() => {
+    console.log("totalCoins:", totalCoins);
+  }, [totalCoins]);
+
+  useEffect(() => {
+    console.log("pendingScore:", pendingScore);
+  }, [pendingScore]);
 
   const handleStart = () => setStarted(true);
 
@@ -54,8 +67,16 @@ export default function App() {
         });
       }
       if (typeof selected?.rate === 'number' && !isNaN(selected.rate)) {
-        setShowCoin((c: number) => c + Math.floor(selected.rate! / 10));
+        // 1. Сразу начисляем очки
         setTotalCoins((prev) => prev + selected.rate!);
+        // 2. Запускаем анимацию монет
+        const coinsToAnimate = Math.floor(selected.rate! / 10);
+        console.log('selected.rate:', selected.rate, 'coinsToAnimate:', coinsToAnimate);
+        if (coinsToAnimate > 0) {
+          setShowCoin((c) => c + coinsToAnimate);
+        }
+      } else {
+        console.log('selected.rate is not a valid number:', selected?.rate);
       }
     } else {
       setWrongAnswers((prev) => [...prev, selected]);
@@ -67,7 +88,8 @@ export default function App() {
   };
 
   const handleCoinAnimationEnd = () => {
-    setShowCoin((c: number) => Math.max(0, c - 1));
+    console.log('handleCoinAnimationEnd called, showCoin:', showCoin);
+    setShowCoin((c) => Math.max(0, c - 1));
   };
 
   if (!started) return <WelcomeScreen onStart={handleStart} />;

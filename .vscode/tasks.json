@@ -48,6 +48,15 @@
           "cwd": "${workspaceFolder}"
         },
         "problemMatcher": []
+      },
+      {
+        "label": "Push Code to GitHub",
+        "type": "shell",
+        "command": "git add .; git commit -m 'Auto-commit from VSCode task'; git push",
+        "options": {
+          "cwd": "${workspaceFolder}"
+        },
+        "problemMatcher": []
       }
     ]
   }
