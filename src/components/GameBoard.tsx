@@ -53,7 +53,7 @@ export function GameBoard({ questions, answered, onSelect, wrongAnswers = [], st
               return (
                 <button
                   key={diff}
-                  style={{ width: "60%" }}
+                  style={{ width: q && (!answered[q.question] || isWrong) ? '72%' : '60%' }}
                   className={`h-16 rounded-lg border flex flex-col items-center justify-center text-lg font-bold transition
                     ${q && !answered[q.question] ? "bg-white hover:bg-blue-100" : "bg-gray-200 cursor-not-allowed"}
                     ${isWrong ? "border-4 border-red-500" : isCorrect ? "border-4 border-green-500" : ""}`}

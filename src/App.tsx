@@ -257,7 +257,7 @@ export default function App() {
     <div className="min-h-screen bg-blue-50 flex flex-col items-center relative">
       {/* Top-right image and label for current level */}
       <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', alignItems: 'center' }}>
-        <span className="mr-3 text-blue-700 font-bold" style={{ fontSize: 22 }}>Level: {level}</span>
+        {/* Removed Level label, only image remains */}
         <img
           src={getLevelImage()}
           alt={`Level ${level}`}
