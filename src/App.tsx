@@ -34,8 +34,14 @@ export default function App() {
   const [firstRound, setFirstRound] = useState(true);
 
   useEffect(() => {
+    // Если вопросы уже есть и есть хотя бы один неотвеченный, не загружаем заново
+    if (questions.length > 0 && questions.some(q => !answered[q.question])) {
+      console.log("Вопросы уже загружены и есть активные");
+      return;
+    }
     fetchQuestions().then(setQuestions);
-  }, []);
+    console.log("загрузка вопросов");
+  }, [questions, answered]);
 
   useEffect(() => {
     console.log("ANSWERED STATE:", answered);
@@ -142,7 +148,7 @@ export default function App() {
         console.log('selected.rate is not a valid number:', selected?.rate);
       }
     } else {
-      setWrongAnswers((prev) => [...prev, selected]);
+      setWrongAnswers((prev) => prev.some(q => q.question === selected.question) ? prev : [...prev, selected]);
     }
     // Проверяем, все ли вопросы из текущих 5 строк отвечены
     const currentQuestions = questions.filter(q => currentRows.includes(q.category));
@@ -188,6 +194,7 @@ export default function App() {
 
   // Handler for Next Questions button (subsequent rounds)
   const handleNextQuestions = () => {
+    setQuestions([]); // Сбросить вопросы, чтобы useEffect загрузил новые
     if (questions.length > 0) {
       const allCategories = Array.from(new Set(questions.map(q => q.category)));
       const available = allCategories.filter(cat => !usedRows.has(cat));
