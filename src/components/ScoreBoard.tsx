@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import React from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 type Props = {
   score: number;
@@ -9,9 +9,23 @@ type Props = {
   coinOrigin?: { x: number; y: number } | null;
   coins: number;
   level: number;
+  hp: number;
+  playerName: string;
 };
 
-export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins, level }: Props) {
+export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins, level, hp, playerName }: Props) {
+  const [showPlusOne, setShowPlusOne] = useState(false);
+  const prevHpRef = useRef(hp);
+
+  useEffect(() => {
+    if (hp > prevHpRef.current) {
+      setShowPlusOne(true);
+      const timer = setTimeout(() => setShowPlusOne(false), 1000); // Animation duration
+      return () => clearTimeout(timer);
+    }
+    prevHpRef.current = hp;
+  }, [hp]);
+
   // Получаем позицию области очков
   const scoreRef = React.useRef<HTMLSpanElement>(null);
   const [target, setTarget] = React.useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -23,10 +37,37 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
     }
   }, [scoreRef.current]);
 
+  const renderHearts = () => {
+    return (
+      <span className="ml-4 flex items-center relative">
+        {Array.from({ length: hp }).map((_, i) => (
+          <span key={i} className="text-2xl text-red-500">
+            ❤️
+          </span>
+        ))}
+        <AnimatePresence>
+          {showPlusOne && (
+            <motion.div
+              initial={{ opacity: 1, x: '-50%', y: '-50%', scale: 1, position: 'fixed', top: '50%', left: '50%' }}
+              animate={{ opacity: 0, x: '100%', y: '-150%', scale: 1.5 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+              className="text-red-500 font-bold text-7xl"
+              style={{ zIndex: 2000 }}
+            >
+              + ❤️
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </span>
+    );
+  };
+
   return (
     <div className="relative mt-4 mb-2 text-lg font-semibold flex items-center justify-center min-h-[40px]">
+      <span className="mr-8 text-green-700 font-bold">Имя: {playerName}</span>
       {/* Removed image to the left of Level */}
-      <span className="mr-8 text-blue-700 font-bold">Level: {level}</span>
+      <span className="mr-8 text-blue-700 font-bold">Уровень: {level}</span>
       <AnimatePresence>
         {Array.from({ length: showCoin }).map((_, i) => {
           // fallback если нет координат
@@ -78,6 +119,7 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
         {" "}
         <span className="ml-4">Очки: {coins}</span>
       </span>
+      {renderHearts()}
     </div>
   );
 } 

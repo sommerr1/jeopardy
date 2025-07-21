@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Question } from "../App";
+import { Question } from "../types";
 
 type Props = {
   questions: Question[];
   answered: { [key: string]: boolean };
   onSelect: (q: Question) => void;
-  wrongAnswers?: Question[];
+  wronganswersstr?: string;
   started: boolean;
 };
 
-export function GameBoard({ questions, answered, onSelect, wrongAnswers = [], started }: Props) {
+export function GameBoard({ questions, answered, onSelect, wronganswersstr = "", started }: Props) {
   console.log("GameBoard questions:", questions);
   // Категории только из переданных вопросов (максимум 5)
   const categories = Array.from(new Set(questions.map((q) => q.category)));
@@ -31,6 +31,25 @@ export function GameBoard({ questions, answered, onSelect, wrongAnswers = [], st
     setShowCoin((c) => Math.max(0, c - 1));
   };
 
+  const renderWrongAnswers = (str: string): React.ReactNode => {
+    const regex = /([^,]+?) \(([^)]+)\)/g;
+    const elements: React.ReactNode[] = [];
+    let match;
+    let idx = 0;
+    while ((match = regex.exec(str)) !== null) {
+      const [full, wrong, right] = match;
+      elements.push(
+        <span key={idx}>
+          <span style={{ color: 'red', textDecoration: 'line-through' }}>{wrong.trim()}</span>
+          <span style={{ color: 'green' }}> ({right})</span>
+          {regex.lastIndex < str.length ? ', ' : ''}
+        </span>
+      );
+      idx++;
+    }
+    return elements;
+  };
+
   return (
     <div className="w-full max-w-3xl mt-8 flex">
       <div className="flex-1">
@@ -47,8 +66,20 @@ export function GameBoard({ questions, answered, onSelect, wrongAnswers = [], st
               const q = questions.find(
                 (q) => q.category === cat && q.difficulty === diff
               );
-              // Проверяем, был ли этот вопрос отвечен неверно
-              const isWrong = q && wrongAnswers.some(w => w.question === q.question);
+              // Проверяем, был ли этот вопрос отвечен неверно через wronganswersstr
+              let isWrong = false;
+              if (q && wronganswersstr) {
+                // ищем любую пару wrong (correct) из вариантов, кроме правильного
+                for (const opt of q.options) {
+                  if (opt !== q.correct) {
+                    const pattern = `${opt} (${q.correct})`;
+                    if (wronganswersstr.includes(pattern)) {
+                      isWrong = true;
+                      break;
+                    }
+                  }
+                }
+              }
               const isCorrect = q && answered[q.question] && !isWrong;
               return (
                 <button
@@ -73,16 +104,7 @@ export function GameBoard({ questions, answered, onSelect, wrongAnswers = [], st
       </div>
       <div className="w-72 ml-6 flex flex-col items-start">
         <div className="text-sm">
-          {wrongAnswers.length > 0
-            ? wrongAnswers.map((q, idx) => {
-                const wrong = q.options.find(opt => opt !== q.correct && !q.options.every(o => o === q.correct)) || '?';
-                return (
-                  <span key={wrong + q.correct}>
-                    <span className="text-red-700"><s>{wrong}</s></span> (<span className="text-green-700">{q.correct}</span>){idx < wrongAnswers.length - 1 ? ', ' : ''}
-                  </span>
-                );
-              })
-            : null}
+          {wronganswersstr && renderWrongAnswers(wronganswersstr)}
         </div>
       </div>
     </div>
