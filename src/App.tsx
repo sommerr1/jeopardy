@@ -6,6 +6,12 @@ import { QuestionModal } from "./components/QuestionModal";
 import { ScoreBoard } from "./components/ScoreBoard";
 import { Player, Question } from "./types";
 import { EndScreen } from "./components/EndScreen";
+import { useQuestions } from "./hooks/useQuestions";
+import { useScore } from "./hooks/useScore";
+import { renderWrongAnswers } from './utils/renderWrongAnswers';
+import { TopBar } from './components/TopBar';
+import { LevelImage } from './components/LevelImage';
+import { GameOverScreen } from './components/GameOverScreen';
 
 // --- ФУНКЦИИ ДЛЯ РАБОТЫ С COOKIE (теперь для JSON) ---
 function setCookie(name: string, value: any, days = 365) {
@@ -35,107 +41,58 @@ function removeCookie(name: string) {
 const SHOW_DEBUG_BUTTONS = true;
 
 export default function App() {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  
-  // Состояния для игроков
-  const initialPlayers = useRef(getCookie('jeopardy_players') || []);
-  const [players, setPlayers] = useState<Player[]>(initialPlayers.current);
-  const [currentPlayerName, setCurrentPlayerName] = useState<string | null>(null);
-  
-  // Состояния для текущей игры
-  const [level, setLevel] = useState(1);
-  const [totalCoins, setTotalCoins] = useState(0);
-  const [hp, setHp] = useState(5);
-  const [consecutiveCorrectLevels, setConsecutiveCorrectLevels] = useState(0);
-  
-  // Удаляем старый стейт 'started', он больше не нужен
-  // const [started, setStarted] = useState(false);
+  // --- SCORE HOOK ---
+  const {
+    players,
+    setPlayers,
+    currentPlayerName,
+    setCurrentPlayerName,
+    level,
+    setLevel,
+    totalCoins,
+    setTotalCoins,
+    hp,
+    setHp,
+    consecutiveCorrectLevels,
+    setConsecutiveCorrectLevels,
+    login,
+    addPlayer,
+    logout,
+    restart,
+  } = useScore();
+
+  // --- ВОПРОСЫ ---
   const [selected, setSelected] = useState<Question | null>(null);
   const [answered, setAnswered] = useState<{ [key: string]: boolean }>({});
   const [score, setScore] = useState(0);
   const [showCoin, setShowCoin] = useState(0);
   const [coinOrigin, setCoinOrigin] = useState<{ x: number; y: number } | null>(null);
   const [wronganswersstr, setWronganswersstr] = useState("");
-  // Добавляем отдельное состояние для ошибок текущего уровня
   const [wronganswersCurrentLevel, setWronganswersCurrentLevel] = useState<string>("");
   const modalRef = useRef<HTMLDivElement>(null);
   const [pendingScore, setPendingScore] = useState(0);
-  const [currentRows, setCurrentRows] = useState<string[]>([]);
-  const [usedRows, setUsedRows] = useState<Set<string>>(new Set());
-  
-  // Удаляем 'firstRound', т.к. логика теперь другая
-  // const [firstRound, setFirstRound] = useState(true);
   const [selectedSpreadsheet, setSelectedSpreadsheet] = useState<string | null>(null);
   const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (selectedSheet) {
-      fetchQuestionsFromSheet(selectedSheet).then(setQuestions);
-    }
-  }, [selectedSheet]);
+  // Новый хук для работы с вопросами
+  const {
+    questions,
+    currentRows,
+    usedRows,
+    setUsedRows,
+    setCurrentRows,
+    getCurrentQuestions,
+    getAvailableCategories,
+    nextQuestions,
+    resetQuestions,
+    setQuestions,
+  } = useQuestions(selectedSheet, currentPlayerName);
 
-  // 2. ЕДИНЫЙ useEffect для выбора категорий
-  // Он заменяет три старых, дублирующих друг друга
-  useEffect(() => {
-    // Не запускаем, если нет вопросов или игрока
-    if (questions.length === 0 || !currentPlayerName) {
-      return;
-    }
+  // --- REMOVE redundant player/score state and cookie logic ---
+  // (all such logic is now handled by useScore)
 
-    const allCategories = Array.from(new Set(questions.map(q => q.category)));
-    const available = allCategories.filter(cat => !usedRows.has(cat));
-
-    if (available.length === 0) {
-      setCurrentRows([]); // Больше нет доступных категорий
-      return;
-    }
-
-    let selected: string[] = [];
-    const count = Math.min(available.length, 2); // Берем 2 или меньше, если осталось мало
-
-    while (selected.length < count) {
-      const idx = Math.floor(Math.random() * available.length);
-      const cat = available[idx];
-      if (!selected.includes(cat)) {
-        selected.push(cat);
-      }
-    }
-    setCurrentRows(selected);
-    // Запускается при смене игрока или когда меняется набор использованных рядов
-  }, [currentPlayerName, usedRows, questions]);
-
-
-  // Сохранение прогресса текущего игрока
-  useEffect(() => {
-    if (currentPlayerName) {
-      const player = players.find(p => p.name === currentPlayerName);
-      if (player) {
-        setLevel(player.level);
-        setTotalCoins(player.score);
-        setHp(player.hp);
-        setConsecutiveCorrectLevels(player.consecutiveCorrectLevels || 0);
-      }
-    }
-  }, [currentPlayerName, players]);
-
-  // Сохранение прогресса текущего игрока
-  useEffect(() => {
-    if (currentPlayerName) {
-      const updatedPlayers = players.map(p => 
-        p.name === currentPlayerName ? { ...p, level, score: totalCoins, hp, consecutiveCorrectLevels, nameOfSheet: selectedSheet || p.nameOfSheet || '' } : p
-      );
-      // Проверяем, действительно ли что-то изменилось, чтобы не перезаписывать куки без надобности
-      if (JSON.stringify(updatedPlayers) !== JSON.stringify(players)) {
-        setPlayers(updatedPlayers);
-        setCookie('jeopardy_players', updatedPlayers);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, totalCoins, hp, consecutiveCorrectLevels, selectedSheet]);
-
-  const handleLogout = () => {
-    setCurrentPlayerName(null);
-  };
+  // --- HANDLERS ---
+  const handleLogout = logout;
 
   const resetGameSession = () => {
     setAnswered({});
@@ -144,29 +101,22 @@ export default function App() {
     setCurrentRows([]);
   };
 
-  // --- ОТЛАДОЧНЫЙ ОБРАБОТЧИК ---
+  // --- DEBUG HANDLER ---
   const handleDebugAllButOne = () => {
     const questionsToAnswer = questions.filter(
       (q) => currentRows.includes(q.category) && !answered[q.question]
     );
-
-    // Отвечаем на все вопросы, кроме последнего
     const questionsToProcess = questionsToAnswer.slice(0, -1);
-
     if (questionsToProcess.length === 0) return;
-
     const newAnswered = { ...answered };
     let scoreToAdd = 0;
-
     questionsToProcess.forEach((q) => {
       newAnswered[q.question] = true;
       scoreToAdd += q.rate || 0;
     });
-
     setAnswered(newAnswered);
     setTotalCoins((prev) => prev + scoreToAdd);
   };
-  // --- КОНЕЦ ОТЛАДОЧНОГО ОБРАБОТЧИКА ---
 
   useEffect(() => {
     console.log("ANSWERED STATE:", answered);
@@ -227,7 +177,7 @@ export default function App() {
       setConsecutiveCorrectLevels(0);
     }
     // Проверяем, все ли вопросы из текущих 2 строк отвечены
-    const currentQuestions = questions.filter(q => currentRows.includes(q.category));
+    const currentQuestions = getCurrentQuestions();
     const allAnswered = currentQuestions.every(q => answered[q.question] || (q.question === selected.question));
     if (allAnswered) {
       // Проверяем, были ли ошибки на этом уровне (только по wronganswersCurrentLevel)
@@ -259,7 +209,7 @@ export default function App() {
   // --- ЛОГИКА ДЛЯ КНОПКИ "СЛЕДУЮЩИЕ ВОПРОСЫ" ---
 
   // Текущие вопросы на доске
-  const currentQuestions = questions.filter(q => currentRows.includes(q.category));
+  const currentQuestions = getCurrentQuestions();
   
   // Все ли текущие вопросы отвечены
   const allCurrentAnswered = currentQuestions.length > 0 && currentQuestions.every(q => answered[q.question]);
@@ -268,9 +218,7 @@ export default function App() {
   const anyWrongInCurrent = currentQuestions.some(q => wronganswersCurrentLevel.includes(`${q.question} (${q.correct})`));
 
   // Проверяем, остались ли ещё категории для новых вопросов
-  const availableCategories = questions.length > 0
-    ? Array.from(new Set(questions.map(q => q.category))).filter(cat => !usedRows.has(cat))
-    : [];
+  const availableCategories = getAvailableCategories();
   const hasMoreQuestions = availableCategories.length > 0;
 
   // Условие показа кнопки
@@ -278,64 +226,10 @@ export default function App() {
   
   // --- ФУНКЦИЯ handleNextQuestions ---
   const handleNextQuestions = () => {
-    setUsedRows(prev => {
-      const next = new Set(prev);
-      if (anyWrongInCurrent) {
-        currentRows.forEach(cat => next.delete(cat));
-      } else {
-        currentRows.forEach(cat => next.add(cat));
-      }
-      return next;
-    });
-    // Сброс ошибок текущего уровня при переходе к новым вопросам
+    nextQuestions(anyWrongInCurrent);
     setWronganswersCurrentLevel("");
-    // Выбираем новые категории
-    const allCategories = Array.from(new Set(questions.map(q => q.category)));
-    const available = allCategories.filter(cat => !usedRows.has(cat));
-    let selected: string[] = [];
-    if (available.length <= 2) {
-      selected = available;
-    } else {
-      while (selected.length < 2) {
-        const idx = Math.floor(Math.random() * available.length);
-        const cat = available[idx];
-        if (!selected.includes(cat)) selected.push(cat);
-      }
-    }
-    setCurrentRows(selected);
-
     setAnswered({});
   };
-  // --- КОНЕЦ ЛОГИКИ ДЛЯ КНОПКИ ---
-
-  // Этот useEffect заменен ручной кнопкой
-  // useEffect(() => {
-  //   if (allCurrentAnswered && hasMoreQuestions) {
-  //     handleNextQuestions();
-  //   }
-  // }, [allCurrentAnswered, hasMoreQuestions]);
-
-  // Эта функция больше не используется и, похоже, содержит баги
-  // const handleNextQuestions = () => {
-  //   setQuestions([]); // Сбросить вопросы, чтобы useEffect загрузил новые
-  //   if (questions.length > 0) {
-  //     const allCategories = Array.from(new Set(questions.map(q => q.category)));
-  //     const available = allCategories.filter(cat => !usedRows.has(cat));
-  //     let selected: string[] = [];
-  //     if (available.length <= 2) {
-  //       selected = available;
-  //     } else {
-  //       while (selected.length < 2) {
-  //         const idx = Math.floor(Math.random() * available.length);
-  //         const cat = available[idx];
-  //         if (!selected.includes(cat)) selected.push(cat);
-  //       }
-  //     }
-  //     setCurrentRows(selected);
-  //     setAnswered({});
-  //     setWrongAnswers([]);
-  //   }
-  // };
 
   // Кнопка активна если все отвечены ИЛИ если новых вопросов больше нет
   const canShowNext = allCurrentAnswered || !hasMoreQuestions;
@@ -412,54 +306,27 @@ export default function App() {
 
   // --- ОБРАБОТЧИКИ ДЛЯ WELCOME SCREEN ---
   const handleSelectPlayer = (name: string) => {
-    setCurrentPlayerName(name);
+    login(name);
+    // Sheet logic
     const player = players.find(p => p.name === name);
     if (player) {
-      setLevel(player.level);
-      setTotalCoins(player.score);
-      setHp(player.hp);
-      setConsecutiveCorrectLevels(player.consecutiveCorrectLevels || 0);
-      // Если выбран лист, обновить nameOfSheet
       if (selectedSheet && player.nameOfSheet !== selectedSheet) {
         const updatedPlayers = players.map(p =>
           p.name === name ? { ...p, nameOfSheet: selectedSheet } : p
         );
         setPlayers(updatedPlayers);
-        setCookie('jeopardy_players', updatedPlayers);
+        // Cookie update handled by useScore
       }
-    } else {
-      setLevel(1);
-      setTotalCoins(0);
-      setHp(5);
-      setConsecutiveCorrectLevels(0);
     }
   };
-  
+
   const handleAddNewPlayer = (name: string) => {
-    const existingPlayer = players.find(p => p.name.toLowerCase() === name.toLowerCase());
-    if (existingPlayer && existingPlayer.hp > 0) {
-      handleSelectPlayer(existingPlayer.name);
-    } else {
-      const newPlayer: Player = { name, level: 1, score: 0, hp: 5, consecutiveCorrectLevels: 0, nameOfSheet: selectedSheet || '' };
-      const updatedPlayers = players.filter(p => p.name.toLowerCase() !== name.toLowerCase());
-      setPlayers([...updatedPlayers, newPlayer]);
-      setCookie('jeopardy_players', [...updatedPlayers, newPlayer]);
-      handleSelectPlayer(name);
-    }
+    addPlayer(name, selectedSheet);
   };
   // --- КОНЕЦ ОБРАБОТЧИКОВ ---
 
   const handleRestart = () => {
-    const updatedPlayers = players.map(p => 
-      p.name === currentPlayerName ? { ...p, level: 1, score: 0, hp: 5, consecutiveCorrectLevels: 0 } : p
-    );
-    setPlayers(updatedPlayers);
-    setCookie('jeopardy_players', updatedPlayers);
-    
-    setLevel(1);
-    setTotalCoins(0);
-    setHp(5);
-    setConsecutiveCorrectLevels(0);
+    restart();
     resetGameSession();
   };
 
@@ -467,8 +334,7 @@ export default function App() {
   const handleRestartQuestions = () => {
     setAnswered({});
     setWronganswersstr("");
-    setUsedRows(new Set());
-    setCurrentRows([]);
+    resetQuestions();
   };
 
   // Теперь `started` определяется наличием currentPlayerName
@@ -479,8 +345,15 @@ export default function App() {
         onSelectPlayer={handleSelectPlayer} 
         onAddNewPlayer={handleAddNewPlayer} 
         onSelectSheet={(sheetName) => {
+          console.log('Выбран лист:', sheetName);
+          console.log('Игроки до:', players);
           setSelectedSheet(sheetName);
           setQuestions([]);
+          // (здесь можно обновлять nameOfSheet у игроков)
+          // setPlayers(players => players.map(p => ({ ...p, nameOfSheet: sheetName })));
+          setTimeout(() => {
+            console.log('Игроки после:', players);
+          }, 0);
         }}
       />
     );
@@ -491,107 +364,48 @@ export default function App() {
 
   // --- Новый экран: все вопросы пройдены ---
   if (currentRows.length === 0 && questions.length > 0 && usedRows.size === new Set(questions.map(q => q.category)).size) {
+    if (!currentPlayer) return null;
     return (
       <EndScreen
-        playerName={currentPlayerName || ''}
-        score={totalCoins}
-        level={level}
+        player={currentPlayer}
         onRestart={handleRestartQuestions}
       />
     );
   }
 
-  // Функция для рендера строки ошибок (аналогична GameBoard)
-  const renderWrongAnswers = (str: string): React.ReactNode => {
-    const regex = /([^,]+?) \(([^)]+)\)/g;
-    const elements: React.ReactNode[] = [];
-    let match;
-    let idx = 0;
-    while ((match = regex.exec(str)) !== null) {
-      const [full, wrong, right] = match;
-      elements.push(
-        <span key={idx}>
-          <span style={{ color: 'red', textDecoration: 'line-through' }}>{wrong.trim()}</span>
-          <span style={{ color: 'green' }}> ({right})</span>
-          {regex.lastIndex < str.length ? ', ' : ''}
-        </span>
-      );
-      idx++;
-    }
-    return elements;
-  };
-
   if (hp <= 0) {
     return (
-      <div className="min-h-screen bg-red-100 flex flex-col justify-center items-center p-4">
-        <div className="w-full max-w-lg bg-white rounded-lg shadow-xl p-6 text-center">
-          <h1 className="text-4xl font-bold text-red-600 mb-4">Игра окончена!</h1>
-          <p className="text-xl mb-2"><strong>Игрок:</strong> {currentPlayerName}</p>
-          <p className="text-xl mb-2"><strong>Уровень:</strong> {level}</p>
-          <p className="text-xl mb-4"><strong>Очки:</strong> {totalCoins}</p>
-          
-          {wronganswersstr && (
-            <div className="text-left mt-6">
-              <h2 className="text-2xl font-semibold mb-2">Ошибки:</h2>
-              <div className="bg-gray-50 p-4 rounded-md text-lg">
-                {renderWrongAnswers(wronganswersstr)}
-              </div>
-            </div>
-          )}
-          
-          <button
-            onClick={handleRestart}
-            className="mt-6 bg-blue-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-blue-700 transition"
-          >
-            Начать сначала
-          </button>
-        </div>
-      </div>
+      <GameOverScreen
+        playerName={currentPlayerName}
+        level={level}
+        totalCoins={totalCoins}
+        wronganswersstr={wronganswersstr}
+        onRestart={handleRestart}
+      />
     );
   }
 
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center relative">
-      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
-        {SHOW_DEBUG_BUTTONS && (
-          <button
-            onClick={handleDebugAllButOne}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
-          >
-            Ответить на все, кроме 1
-          </button>
-        )}
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs"
-        >
-          Сменить игрока
-        </button>
-      </div>
-
-      {/* Top-right image and label for current level */}
-      <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', alignItems: 'center' }}>
-        {/* Removed Level label, only image remains */}
-        <img
-          src={getLevelImage()}
-          alt={`Level ${level}`}
-          style={{ width: 360, height: 360, objectFit: 'contain', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
-          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-        />
-      </div>
-      <ScoreBoard
-        score={score}
-        total={Object.keys(answered).length}
-        showCoin={showCoin}
-        onCoinAnimationEnd={handleCoinAnimationEnd}
-        coinOrigin={coinOrigin}
-        coins={totalCoins}
-        level={level}
-        hp={hp}
-        playerName={currentPlayerName || ''}
+      <TopBar
+        showDebug={SHOW_DEBUG_BUTTONS}
+        onDebug={handleDebugAllButOne}
+        onLogout={handleLogout}
       />
+      <LevelImage src={getLevelImage()} alt={`Level ${level}`} />
+      {currentPlayer && (
+        <ScoreBoard
+          player={currentPlayer}
+          score={score}
+          total={Object.keys(answered).length}
+          showCoin={showCoin}
+          onCoinAnimationEnd={handleCoinAnimationEnd}
+          coinOrigin={coinOrigin}
+          coins={totalCoins}
+        />
+      )}
       <GameBoard
-        questions={questions.filter(q => currentRows.includes(q.category))}
+        questions={currentQuestions}
         answered={answered}
         onSelect={handleSelect}
         wronganswersstr={wronganswersstr}

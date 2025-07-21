@@ -1,3 +1,33 @@
 @tailwind base;
 @tailwind components;
-@tailwind utilities; 
+@tailwind utilities;
+
+/* Кастомные utility-классы */
+.modal-shadow {
+  @apply shadow-xl rounded-xl p-8 bg-white;
+}
+
+.btn-main {
+  @apply bg-blue-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-blue-700 transition;
+}
+
+.btn-danger {
+  @apply bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs;
+}
+
+.leaderboard-table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.level-image {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+}
+
+.cell-btn {
+  @apply h-16 rounded-lg border flex flex-col items-center justify-center text-lg font-bold transition;
+} 

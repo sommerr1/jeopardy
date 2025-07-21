@@ -23,6 +23,8 @@ export function WelcomeScreen({ players, onSelectPlayer, onAddNewPlayer, onSelec
       .finally(() => setLoading(false));
   }, []);
 
+  // (удалён useEffect с авто-выбором первого листа)
+
   const handleSheetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedSheet(e.target.value);
     if (e.target.value) {

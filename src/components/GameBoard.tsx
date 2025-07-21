@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Question } from "../types";
+import { renderWrongAnswers } from '../utils/renderWrongAnswers';
 
 type Props = {
   questions: Question[];
@@ -8,6 +9,74 @@ type Props = {
   wronganswersstr?: string;
   started: boolean;
 };
+
+// Компонент для отдельной ячейки
+function GameCell({ q, answered, isWrong, isCorrect, onSelect }: {
+  q: Question | undefined;
+  answered: boolean;
+  isWrong: boolean;
+  isCorrect: boolean;
+  onSelect: (q: Question) => void;
+}) {
+  return (
+    <button
+      style={{ width: q && (!answered || isWrong) ? '72%' : '60%' }}
+      className={`cell-btn ${q && !answered ? "bg-white hover:bg-blue-100" : "bg-gray-200 cursor-not-allowed"} ${isWrong ? "border-4 border-red-500" : isCorrect ? "border-4 border-green-500" : ""}`}
+      disabled={!q || answered}
+      onClick={() => q && onSelect(q)}
+    >
+      {q && !answered ? (
+        q.rate ? <span className="text-xl text-blue-700 mt-1">{q.rate}</span> : "?"
+      ) : (
+        q && q.rate ? <span className="text-xl text-gray-400 mt-1">{q.rate}</span> : q ? "-" : "-"
+      )}
+    </button>
+  );
+}
+
+// Компонент для строки категории
+function CategoryRow({ cat, difficulties, questions, answered, wronganswersstr, onSelect }: {
+  cat: string;
+  difficulties: string[];
+  questions: Question[];
+  answered: { [key: string]: boolean };
+  wronganswersstr: string;
+  onSelect: (q: Question) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 mt-2" key={cat}>
+      <div className="font-semibold">{cat}</div>
+      {difficulties.map((diff) => {
+        const q = questions.find(
+          (q) => q.category === cat && q.difficulty === diff
+        );
+        let isWrong = false;
+        if (q && wronganswersstr) {
+          for (const opt of q.options) {
+            if (opt !== q.correct) {
+              const pattern = `${opt} (${q.correct})`;
+              if (wronganswersstr.includes(pattern)) {
+                isWrong = true;
+                break;
+              }
+            }
+          }
+        }
+        const isCorrect = q && answered[q.question] && !isWrong;
+        return (
+          <GameCell
+            key={diff}
+            q={q}
+            answered={!!(q && answered[q.question])}
+            isWrong={isWrong}
+            isCorrect={!!isCorrect}
+            onSelect={onSelect}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export function GameBoard({ questions, answered, onSelect, wronganswersstr = "", started }: Props) {
   console.log("GameBoard questions:", questions);
@@ -31,25 +100,6 @@ export function GameBoard({ questions, answered, onSelect, wronganswersstr = "",
     setShowCoin((c) => Math.max(0, c - 1));
   };
 
-  const renderWrongAnswers = (str: string): React.ReactNode => {
-    const regex = /([^,]+?) \(([^)]+)\)/g;
-    const elements: React.ReactNode[] = [];
-    let match;
-    let idx = 0;
-    while ((match = regex.exec(str)) !== null) {
-      const [full, wrong, right] = match;
-      elements.push(
-        <span key={idx}>
-          <span style={{ color: 'red', textDecoration: 'line-through' }}>{wrong.trim()}</span>
-          <span style={{ color: 'green' }}> ({right})</span>
-          {regex.lastIndex < str.length ? ', ' : ''}
-        </span>
-      );
-      idx++;
-    }
-    return elements;
-  };
-
   return (
     <div className="w-full max-w-3xl mt-8 flex">
       <div className="flex-1">
@@ -60,46 +110,15 @@ export function GameBoard({ questions, answered, onSelect, wronganswersstr = "",
           ))}
         </div>
         {categories.map((cat) => (
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 mt-2" key={cat}>
-            <div className="font-semibold">{cat}</div>
-            {difficulties.map((diff) => {
-              const q = questions.find(
-                (q) => q.category === cat && q.difficulty === diff
-              );
-              // Проверяем, был ли этот вопрос отвечен неверно через wronganswersstr
-              let isWrong = false;
-              if (q && wronganswersstr) {
-                // ищем любую пару wrong (correct) из вариантов, кроме правильного
-                for (const opt of q.options) {
-                  if (opt !== q.correct) {
-                    const pattern = `${opt} (${q.correct})`;
-                    if (wronganswersstr.includes(pattern)) {
-                      isWrong = true;
-                      break;
-                    }
-                  }
-                }
-              }
-              const isCorrect = q && answered[q.question] && !isWrong;
-              return (
-                <button
-                  key={diff}
-                  style={{ width: q && (!answered[q.question] || isWrong) ? '72%' : '60%' }}
-                  className={`h-16 rounded-lg border flex flex-col items-center justify-center text-lg font-bold transition
-                    ${q && !answered[q.question] ? "bg-white hover:bg-blue-100" : "bg-gray-200 cursor-not-allowed"}
-                    ${isWrong ? "border-4 border-red-500" : isCorrect ? "border-4 border-green-500" : ""}`}
-                  disabled={!q || answered[q.question]}
-                  onClick={() => q && onSelect(q)}
-                >
-                  {q && !answered[q.question] ? (
-                    q.rate ? <span className="text-xl text-blue-700 mt-1">{q.rate}</span> : "?"
-                  ) : (
-                    q && q.rate ? <span className="text-xl text-gray-400 mt-1">{q.rate}</span> : q ? "-" : "-"
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <CategoryRow
+            key={cat}
+            cat={cat}
+            difficulties={difficulties}
+            questions={questions}
+            answered={answered}
+            wronganswersstr={wronganswersstr}
+            onSelect={onSelect}
+          />
         ))}
       </div>
       <div className="w-72 ml-6 flex flex-col items-start">

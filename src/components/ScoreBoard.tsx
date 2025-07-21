@@ -1,19 +1,20 @@
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef } from "react";
+import { Player } from '../types';
+import { Hearts } from './Hearts';
 
 type Props = {
+  player: Player;
   score: number;
   total: number;
   showCoin?: number;
   onCoinAnimationEnd?: () => void;
   coinOrigin?: { x: number; y: number } | null;
   coins: number;
-  level: number;
-  hp: number;
-  playerName: string;
 };
 
-export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins, level, hp, playerName }: Props) {
+export function ScoreBoard({ player, score, total, showCoin = 0, onCoinAnimationEnd, coinOrigin, coins }: Props) {
+  const { level, hp, name: playerName } = player;
   const [showPlusOne, setShowPlusOne] = useState(false);
   const prevHpRef = useRef(hp);
 
@@ -37,32 +38,6 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
     }
   }, [scoreRef.current]);
 
-  const renderHearts = () => {
-    return (
-      <span className="ml-4 flex items-center relative">
-        {Array.from({ length: hp }).map((_, i) => (
-          <span key={i} className="text-2xl text-red-500">
-            ❤️
-          </span>
-        ))}
-        <AnimatePresence>
-          {showPlusOne && (
-            <motion.div
-              initial={{ opacity: 1, x: '-50%', y: '-50%', scale: 1, position: 'fixed', top: '50%', left: '50%' }}
-              animate={{ opacity: 0, x: '100%', y: '-150%', scale: 1.5 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1 }}
-              className="text-red-500 font-bold text-7xl"
-              style={{ zIndex: 2000 }}
-            >
-              + ❤️
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </span>
-    );
-  };
-
   return (
     <div className="relative mt-4 mb-2 text-lg font-semibold flex items-center justify-center min-h-[40px]">
       <span className="mr-8 text-green-700 font-bold">Имя: {playerName}</span>
@@ -76,7 +51,7 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
           const to = target
             ? {
                 x: target.x + target.w / 2 - 16, // 16 = половина финального размера монеты (w-8 = 32px, scale 0.5)
-                y: target.y + target.h / 2 - 16,
+                y: target.y + target.h / 2 - 116, // Летим выше (на 100px вверх)
               }
             : { x: 0, y: 0 };
           return (
@@ -98,7 +73,7 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
                 rotate: 720,
               }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut", delay: i * 0.1 }}
+              transition={{ duration: 0.9, ease: "easeInOut", delay: i * 0.1 }}
               style={{ zIndex: 1000, pointerEvents: "none" }}
               onAnimationComplete={onCoinAnimationEnd}
             >
@@ -119,7 +94,7 @@ export function ScoreBoard({ score, total, showCoin = 0, onCoinAnimationEnd, coi
         {" "}
         <span className="ml-4">Очки: {coins}</span>
       </span>
-      {renderHearts()}
+      <Hearts hp={hp} showPlusOne={showPlusOne} />
     </div>
   );
 } 

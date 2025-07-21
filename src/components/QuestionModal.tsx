@@ -1,6 +1,6 @@
 import React, { useState, forwardRef } from "react";
 import { motion } from "framer-motion";
-import { Question } from "../App";
+import { Question } from "../types";
 
 type Props = {
   question: Question;

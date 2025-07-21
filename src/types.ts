@@ -15,4 +15,4 @@ export type Player = {
   hp: number;
   consecutiveCorrectLevels: number;
   nameOfSheet: string;
-}; 
+};
