@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Test</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; }
+        canvas { display: block; }
+        .debug { position: fixed; top: 10px; left: 10px; color: white; font-family: monospace; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <div class="debug">
+        <div>🎯 Testing 3D Model</div>
+        <div>📏 Scale: 1.0x</div>
+        <div>📷 Camera: [0, 0, 50]</div>
+    </div>
+    
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.158.0/build/three.module.js';
+        import { OrbitControls } from 'https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from 'https://unpkg.com/three@0.158.0/examples/jsm/loaders/GLTFLoader.js';
+        
+        // Создаем сцену
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        
+        // Создаем камеру
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+        camera.position.set(0, 0, 100);
+        
+        // Создаем рендерер
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        // Добавляем освещение
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 10, 5);
+        scene.add(directionalLight);
+        
+        // Добавляем координатную сетку
+        const gridHelper = new THREE.GridHelper(100, 100, 0x666666, 0x999999);
+        scene.add(gridHelper);
+        
+        // Добавляем OrbitControls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 200;
+        controls.minDistance = 10;
+        
+        // Загружаем модель
+        const loader = new GLTFLoader();
+        loader.load(
+            '/src/models/mark_23__animated_free.glb',
+            function (gltf) {
+                console.log('Model loaded successfully:', gltf);
+                
+                const model = gltf.scene;
+                scene.add(model);
+                
+                // Вычисляем размеры модели
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                
+                console.log('Model size:', size);
+                console.log('Model center:', center);
+                
+                // Центрируем модель
+                model.position.set(-center.x, -center.y, -center.z);
+                
+                // Настраиваем камеру в зависимости от размера модели
+                const maxDimension = Math.max(size.x, size.y, size.z);
+                const distance = maxDimension * 2;
+                camera.position.set(0, 0, distance);
+                camera.lookAt(0, 0, 0);
+                
+                console.log('Camera position set to:', camera.position);
+                
+                // Обновляем отладочную информацию
+                document.querySelector('.debug').innerHTML = `
+                    <div>🎯 Model: mark_23__animated_free.glb</div>
+                    <div>📏 Size: ${size.x.toFixed(1)} x ${size.y.toFixed(1)} x ${size.z.toFixed(1)}</div>
+                    <div>📍 Center: ${center.x.toFixed(1)}, ${center.y.toFixed(1)}, ${center.z.toFixed(1)}</div>
+                    <div>📷 Camera: [${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)}]</div>
+                `;
+            },
+            function (progress) {
+                console.log('Loading progress:', (progress.loaded / progress.total * 100) + '%');
+            },
+            function (error) {
+                console.error('Error loading model:', error);
+                document.querySelector('.debug').innerHTML = `
+                    <div>❌ Error loading model</div>
+                    <div>${error.message}</div>
+                `;
+            }
+        );
+        
+        // Анимационный цикл
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        // Обработка изменения размера окна
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+</body>
+</html> 

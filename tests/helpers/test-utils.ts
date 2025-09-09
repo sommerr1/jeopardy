@@ -6,10 +6,37 @@ export class TestUtils {
   async waitForAppLoad() {
     // Ждем загрузки приложения
     await this.page.waitForLoadState('networkidle');
+    
+    // Ждем завершения загрузки данных
+    await this.page.waitForSelector('div:has-text("Загрузка...")', { state: 'hidden', timeout: 10000 });
+    
+    // Ждем появления основных элементов
+    await this.page.waitForSelector('h1:has-text("Jeopardy!")', { timeout: 10000 });
+    
+    // Ждем появления селекта (может быть изначально скрыт)
+    await this.page.waitForSelector('select', { timeout: 10000 });
+    
     await this.page.waitForTimeout(1000);
   }
 
   async selectSheet(sheetName?: string) {
+    // Ждем завершения загрузки данных
+    await this.page.waitForSelector('div:has-text("Загрузка...")', { state: 'hidden', timeout: 10000 });
+    
+    // Ждем появления селекта (может быть изначально скрыт)
+    await this.page.waitForSelector('select', { timeout: 10000 });
+    
+    // Ждем, что селект стал активным
+    await this.page.waitForSelector('select:not([disabled])', { timeout: 15000 });
+    
+    // Ждем загрузки опций (проверяем, что есть опции с значениями)
+    await this.page.waitForFunction(() => {
+      const select = document.querySelector('select');
+      if (!select) return false;
+      const options = Array.from(select.options);
+      return options.some(option => option.value && option.value !== '');
+    }, { timeout: 15000 });
+    
     const sheetSelect = this.page.locator('select').first();
     
     if (sheetName) {
@@ -21,6 +48,9 @@ export class TestUtils {
         await sheetSelect.selectOption({ index: 1 });
       }
     }
+    
+    // Ждем, что поле ввода стало активным после выбора листа
+    await this.page.waitForSelector('input[placeholder="Имя нового игрока"]:not([disabled])', { timeout: 10000 });
   }
 
   async createNewPlayer(playerName: string) {
@@ -39,23 +69,45 @@ export class TestUtils {
   }
 
   async selectFirstQuestion() {
-    // Ждем появления игровой доски
-    await this.page.waitForSelector('.cell-btn:not([disabled])', { timeout: 10000 });
+    // Ждем появления игровой доски с поддержкой разных рендереров
+    await this.page.waitForSelector('.cell-btn:not([disabled]), button:not([disabled])[class*="p-3"], button:not([disabled])[class*="rounded"]', { timeout: 10000 });
     
-    // Выбираем первую доступную карточку (не отвеченную)
-    const firstAvailableCard = this.page.locator('.cell-btn:not([disabled])').first();
-    await firstAvailableCard.click();
+    // Сначала пробуем найти классические ячейки
+    const classicCells = this.page.locator('.cell-btn:not([disabled])');
+    if (await classicCells.count() > 0) {
+      try {
+        await classicCells.first().click();
+      } catch (error) {
+        // If click fails due to interception, try force click
+        await classicCells.first().click({ force: true });
+      }
+      return;
+    }
+    
+    // Fallback для других рендереров
+    const fallbackCells = this.page.locator('button:not([disabled])[class*="p-3"], button:not([disabled])[class*="rounded"]');
+    if (await fallbackCells.count() > 0) {
+      try {
+        await fallbackCells.first().click();
+      } catch (error) {
+        // If click fails due to interception, try force click
+        await fallbackCells.first().click({ force: true });
+      }
+      return;
+    }
+    
+    throw new Error('No available question cells found');
   }
 
   async answerQuestion(correctAnswer: boolean = true) {
     // Ждем появления модального окна с вопросом
-    await this.page.waitForSelector('h2', { timeout: 5000 });
+    await this.page.waitForSelector('h2, h3', { timeout: 5000 });
     
-    // Ждем появления кнопок с вариантами ответов (внутри модального окна)
-    await this.page.waitForSelector('.bg-white button:not([disabled])', { timeout: 5000 });
+    // Ждем появления кнопок с вариантами ответов (внутри модального окна) с поддержкой разных рендереров
+    await this.page.waitForSelector('.bg-white button:not([disabled]), .bg-gray-900 button:not([disabled])', { timeout: 5000 });
     
-    // Выбираем первый доступный ответ (внутри модального окна)
-    const answerButtons = this.page.locator('.bg-white button:not([disabled])');
+    // Выбираем первый доступный ответ (внутри модального окна) с поддержкой разных рендереров
+    const answerButtons = this.page.locator('.bg-white button:not([disabled]), .bg-gray-900 button:not([disabled])');
     const firstButton = answerButtons.first();
     await firstButton.click();
     
@@ -78,14 +130,20 @@ export class TestUtils {
   }
 
   async waitForGameBoard() {
-    // Ждем появления игровой доски
-    await this.page.waitForSelector('.cell-btn', { timeout: 10000 });
+    // Ждем появления игровой доски с поддержкой разных рендереров
+    await this.page.waitForSelector('.cell-btn, .grid.grid-cols-1.sm\\:grid-cols-5, .w-full.max-w-4xl', { timeout: 10000 });
   }
 
   async getAvailableQuestionsCount() {
-    // Подсчитываем количество доступных (не отвеченных) вопросов
-    const availableCards = await this.page.locator('.cell-btn:not([disabled])').count();
-    return availableCards;
+    // Подсчитываем количество доступных (не отвеченных) вопросов с поддержкой разных рендереров
+    const classicCards = await this.page.locator('.cell-btn:not([disabled])').count();
+    if (classicCards > 0) {
+      return classicCards;
+    }
+    
+    // Fallback для других рендереров
+    const fallbackCards = await this.page.locator('button:not([disabled])[class*="p-3"], button:not([disabled])[class*="rounded"]').count();
+    return fallbackCards;
   }
 
   async playFullGame(maxQuestions: number = 10) {

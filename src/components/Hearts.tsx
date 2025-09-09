@@ -7,7 +7,7 @@ interface HeartsProps {
 }
 
 export const Hearts: React.FC<HeartsProps> = ({ hp, showPlusOne }) => (
-  <span className="ml-4 flex items-center relative">
+  <span className="ml-4 flex items-center relative" data-testid="player-lives">
     {Array.from({ length: hp }).map((_, i) => (
       <span key={i} className="text-2xl text-red-500">
         {'❤️'}

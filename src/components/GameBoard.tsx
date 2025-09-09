@@ -24,6 +24,7 @@ function GameCell({ q, answered, isWrong, isCorrect, onSelect }: {
       className={`cell-btn ${q && !answered ? "bg-white hover:bg-blue-100" : "bg-gray-200 cursor-not-allowed"} ${isWrong ? "border-4 border-red-500" : isCorrect ? "border-4 border-green-500" : ""}`}
       disabled={!q || answered}
       onClick={() => q && onSelect(q)}
+      data-testid={q ? "question-cell" : "empty-cell"}
     >
       {q && !answered ? (
         q.rate ? <span className="text-xl text-blue-700 mt-1">{q.rate}</span> : "?"
@@ -52,10 +53,14 @@ function CategoryRow({ cat, difficulties, questions, answered, wronganswersstr, 
         );
         let isWrong = false;
         if (q && wronganswersstr) {
-          for (const opt of q.options) {
-            if (opt !== q.correct) {
-              const pattern = `${opt} (${q.correct})`;
-              if (wronganswersstr.includes(pattern)) {
+          // Проверяем, был ли дан неправильный ответ именно для этого вопроса
+          // Ищем паттерн, который содержит неправильный ответ для этого конкретного вопроса
+          const wrongAnswers = wronganswersstr.split(', ');
+          for (const wrongAnswer of wrongAnswers) {
+            if (wrongAnswer.includes(`(${q.correct})`)) {
+              // Проверяем, что это действительно неправильный ответ для этого вопроса
+              const wrongPart = wrongAnswer.split(' (')[0];
+              if (q.options.includes(wrongPart) && wrongPart !== q.correct) {
                 isWrong = true;
                 break;
               }
@@ -101,7 +106,7 @@ export function GameBoard({ questions, answered, onSelect, wronganswersstr = "",
   };
 
   return (
-    <div className="w-full max-w-3xl mt-8 flex">
+    <div className="w-full max-w-3xl mt-8 flex" data-testid="game-board">
       <div className="flex-1">
         <div className="grid grid-cols-1 sm:grid-cols-5 gap-0">
           <div></div>

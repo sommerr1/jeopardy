@@ -4,7 +4,7 @@ import { WelcomeScreen } from "./components/WelcomeScreen";
 import { GameBoard } from "./components/GameBoard";
 import { QuestionModal } from "./components/QuestionModal";
 import { ScoreBoard } from "./components/ScoreBoard";
-import { Player, Question } from "./types";
+import { Player, Question, GameType, RendererType } from "./types";
 import { EndScreen } from "./components/EndScreen";
 import { useQuestions } from "./hooks/useQuestions";
 import { useScore } from "./hooks/useScore";
@@ -12,6 +12,9 @@ import { renderWrongAnswers } from './utils/renderWrongAnswers';
 import { TopBar } from './components/TopBar';
 import { LevelImage } from './components/LevelImage';
 import { GameOverScreen } from './components/GameOverScreen';
+import { GameTypeSelector } from './components/GameTypeSelector';
+import { RendererFactory } from './renderers';
+import ModelTest from './components/ModelTest';
 
 // --- ФУНКЦИИ ДЛЯ РАБОТЫ С COOKIE (теперь для JSON) ---
 function setCookie(name: string, value: any, days = 365) {
@@ -55,6 +58,10 @@ export default function App() {
     setHp,
     consecutiveCorrectLevels,
     setConsecutiveCorrectLevels,
+    totalCorrectAnswers,
+    setTotalCorrectAnswers,
+    totalQuestionsAsked,
+    setTotalQuestionsAsked,
     login,
     addPlayer,
     logout,
@@ -68,11 +75,43 @@ export default function App() {
   const [showCoin, setShowCoin] = useState(0);
   const [coinOrigin, setCoinOrigin] = useState<{ x: number; y: number } | null>(null);
   const [wronganswersstr, setWronganswersstr] = useState("");
+
+  // Функция для получения имени куки с неправильными ответами для текущего игрока
+  const getWrongAnswersCookieName = () => {
+    return currentPlayerName ? `jeopardy_wronganswersstr_${currentPlayerName}` : 'jeopardy_wronganswersstr';
+  };
+
+  // Функция для очистки старых куки (без имени игрока)
+  const clearOldWrongAnswersCookie = () => {
+    const oldCookieName = 'jeopardy_wronganswersstr';
+    const oldCookie = getCookie(oldCookieName);
+    if (oldCookie) {
+      removeCookie(oldCookieName);
+      console.log('Очищена старая куки с неправильными ответами:', oldCookieName);
+    }
+  };
   const [wronganswersCurrentLevel, setWronganswersCurrentLevel] = useState<string>("");
   const modalRef = useRef<HTMLDivElement>(null);
   const [pendingScore, setPendingScore] = useState(0);
   const [selectedSpreadsheet, setSelectedSpreadsheet] = useState<string | null>(null);
   const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
+  const [selectedGameType, setSelectedGameType] = useState<GameType | null>(null);
+  
+  // --- РЕНДЕРЕРЫ ---
+  const [selectedRenderer, setSelectedRenderer] = useState<RendererType>('classic');
+  const [showModelTest, setShowModelTest] = useState(false);
+
+  // Очищаем старые куки при инициализации приложения
+  useEffect(() => {
+    clearOldWrongAnswersCookie();
+  }, []);
+
+  // Автоматически переключаемся на рендерер автоматов для типа игры automata
+  useEffect(() => {
+    if (selectedGameType === 'automata') {
+      setSelectedRenderer('automata');
+    }
+  }, [selectedGameType]);
 
   // Новый хук для работы с вопросами
   const {
@@ -92,13 +131,19 @@ export default function App() {
   // (all such logic is now handled by useScore)
 
   // --- HANDLERS ---
-  const handleLogout = logout;
+  const handleLogout = () => {
+    logout();
+    setSelectedGameType(null);
+    // Статистика вопросов сбрасывается автоматически в хуке useScore
+  };
 
   const resetGameSession = () => {
     setAnswered({});
     setWronganswersstr("");
+    removeCookie(getWrongAnswersCookieName());
     setUsedRows(new Set());
     setCurrentRows([]);
+    // Статистика вопросов сохраняется в хуке useScore
   };
 
   // --- DEBUG HANDLER ---
@@ -116,6 +161,10 @@ export default function App() {
     });
     setAnswered(newAnswered);
     setTotalCoins((prev) => prev + scoreToAdd);
+    
+    // Обновляем общую статистику вопросов для отладочных ответов
+    setTotalQuestionsAsked(prev => prev + questionsToProcess.length);
+    setTotalCorrectAnswers(prev => prev + questionsToProcess.length);
   };
 
   useEffect(() => {
@@ -139,6 +188,25 @@ export default function App() {
     setCookie('jeopardy_level', String(level));
   }, [level]);
 
+  // Сохраняем неправильные ответы в куки при каждом изменении
+  useEffect(() => {
+    if (wronganswersstr) {
+      setCookie(getWrongAnswersCookieName(), wronganswersstr);
+    } else {
+      removeCookie(getWrongAnswersCookieName());
+    }
+  }, [wronganswersstr, currentPlayerName]);
+
+  // Загружаем неправильные ответы из куки при смене игрока
+  useEffect(() => {
+    if (currentPlayerName) {
+      const savedWrongAnswers = getCookie(getWrongAnswersCookieName());
+      setWronganswersstr(savedWrongAnswers || ""); // Сбрасываем на пустую строку, если куки нет
+    } else {
+      setWronganswersstr(""); // Сбрасываем при выходе из игры
+    }
+  }, [currentPlayerName]);
+
 
   const handleSelect = (q: Question) => setSelected(q);
   let anyWrong : boolean = false;
@@ -147,6 +215,13 @@ export default function App() {
     const isCorrect = answer === selected.correct;
     setAnswered((prev: { [key: string]: boolean }) => ({ ...prev, [selected.question]: true }));
     setScore((s: number) => s + (isCorrect ? 1 : 0));
+    
+    // Обновляем общую статистику вопросов
+    setTotalQuestionsAsked(prev => prev + 1);
+    if (isCorrect) {
+      setTotalCorrectAnswers(prev => prev + 1);
+    }
+    
     if (isCorrect) {
       // Получаем координаты центра модалки
       if (modalRef.current) {
@@ -172,8 +247,8 @@ export default function App() {
       setHp(h => h - 1);
       anyWrong = true; 
       // Формируем строку: неправильный (правильный)
-      setWronganswersstr(prev => prev ? `${prev}, ${answer} (${selected.correct})` : `${answer} (${selected.correct})`);
-      setWronganswersCurrentLevel(prev => prev ? `${prev}, ${answer} (${selected.correct})` : `${answer} (${selected.correct})`);
+      setWronganswersstr((prev: string) => prev ? `${prev}, ${answer} (${selected.correct})` : `${answer} (${selected.correct})`);
+      setWronganswersCurrentLevel((prev: string) => prev ? `${prev}, ${answer} (${selected.correct})` : `${answer} (${selected.correct})`);
       setConsecutiveCorrectLevels(0);
     }
     // Проверяем, все ли вопросы из текущих 2 строк отвечены
@@ -310,9 +385,22 @@ export default function App() {
     // Sheet logic
     const player = players.find(p => p.name === name);
     if (player) {
+      let needsUpdate = false;
+      let updatedPlayer = { ...player };
+      
       if (selectedSheet && player.nameOfSheet !== selectedSheet) {
+        updatedPlayer.nameOfSheet = selectedSheet;
+        needsUpdate = true;
+      }
+      
+      if (selectedGameType && player.gameType !== selectedGameType) {
+        updatedPlayer.gameType = selectedGameType;
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
         const updatedPlayers = players.map(p =>
-          p.name === name ? { ...p, nameOfSheet: selectedSheet } : p
+          p.name === name ? updatedPlayer : p
         );
         setPlayers(updatedPlayers);
         // Cookie update handled by useScore
@@ -321,23 +409,48 @@ export default function App() {
   };
 
   const handleAddNewPlayer = (name: string) => {
-    addPlayer(name, selectedSheet);
+    if (selectedSheet && selectedGameType) {
+      addPlayer(name, selectedSheet, selectedGameType);
+    }
   };
   // --- КОНЕЦ ОБРАБОТЧИКОВ ---
 
   const handleRestart = () => {
     restart();
     resetGameSession();
+    setSelectedGameType(null);
+    // Статистика вопросов сбрасывается автоматически в хуке useScore
   };
 
   // --- Новый обработчик для рестарта только вопросов ---
   const handleRestartQuestions = () => {
-    setAnswered({});
-    setWronganswersstr("");
-    resetQuestions();
+    // НЕ сбрасываем отвеченные вопросы - оставляем прогресс
+    // setAnswered({});
+    
+    // НЕ очищаем неправильные ответы - сохраняем историю ошибок
+    // setWronganswersstr("");
+    
+    // НЕ удаляем куки - сохраняем неправильные ответы
+    // removeCookie(getWrongAnswersCookieName());
+    
+    resetQuestions(); // Сбрасываем только вопросы
+    // НЕ сбрасываем тип игры - продолжаем с тем же типом
+    // setSelectedGameType(null);
+    // Статистика вопросов сохраняется в хуке useScore
   };
 
-  // Теперь `started` определяется наличием currentPlayerName
+  // Сначала показываем экран выбора типа игры
+  if (!selectedGameType) {
+    return (
+      <GameTypeSelector 
+        onSelectGameType={(gameType) => {
+          setSelectedGameType(gameType as GameType);
+        }}
+      />
+    );
+  }
+
+  // Затем показываем экран выбора игрока и листа
   if (!currentPlayerName) {
     return (
       <WelcomeScreen 
@@ -355,6 +468,8 @@ export default function App() {
             console.log('Игроки после:', players);
           }, 0);
         }}
+        gameType={selectedGameType}
+        onBackToGameType={() => setSelectedGameType(null)}
       />
     );
   }
@@ -385,32 +500,53 @@ export default function App() {
     );
   }
 
+  // Получаем текущий рендерер
+  const currentRenderer = RendererFactory.get(selectedRenderer);
+
   return (
     <div className="min-h-screen bg-blue-50 flex flex-col items-center relative">
       <TopBar
         showDebug={SHOW_DEBUG_BUTTONS}
         onDebug={handleDebugAllButOne}
         onLogout={handleLogout}
+        onBackToGameType={() => setSelectedGameType(null)}
+        availableRenderers={RendererFactory.getAvailableTypes()}
+        currentRenderer={selectedRenderer}
+        onRendererChange={setSelectedRenderer}
       />
-      <LevelImage src={getLevelImage()} alt={`Level ${level}`} />
-      {currentPlayer && (
-        <ScoreBoard
-          player={currentPlayer}
-          score={score}
-          total={Object.keys(answered).length}
-          showCoin={showCoin}
-          onCoinAnimationEnd={handleCoinAnimationEnd}
-          coinOrigin={coinOrigin}
-          coins={totalCoins}
-        />
+      
+      {/* Временная кнопка для тестирования модели - только для автомата */}
+      {SHOW_DEBUG_BUTTONS && selectedGameType === 'automata' && (
+        <div className="absolute top-20 right-4 z-50">
+          <button
+            onClick={() => setShowModelTest(!showModelTest)}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            {showModelTest ? 'Скрыть' : 'Показать'} Тест Модели
+          </button>
+        </div>
       )}
-      <GameBoard
-        questions={currentQuestions}
-        answered={answered}
-        onSelect={handleSelect}
-        wronganswersstr={wronganswersstr}
-        started={false}
-      />
+      
+      {showModelTest && <ModelTest />}
+      <LevelImage src={getLevelImage()} alt={`Level ${level}`} />
+      
+      {currentPlayer && currentRenderer.renderScore(
+        currentPlayer,
+        totalCorrectAnswers,
+        totalQuestionsAsked,
+        showCoin,
+        handleCoinAnimationEnd,
+        coinOrigin,
+        totalCoins
+      )}
+      
+      {currentRenderer.renderBoard(
+        currentQuestions,
+        answered,
+        handleSelect,
+        wronganswersstr
+      )}
+      
       {canShowNextButton && (
         <div className="mt-4">
           <button
@@ -421,15 +557,13 @@ export default function App() {
           </button>
         </div>
       )}
-      {/* Следующие вопросы button removed, now handled automatically */}
-      {selected && (
-        <QuestionModal
-          question={selected}
-          onAnswer={handleAnswer}
-          answered={answered[selected.question]}
-          onClose={handleCloseModal}
-          modalRef={modalRef}
-        />
+      
+      {selected && currentRenderer.renderQuestion(
+        selected,
+        handleAnswer,
+        answered[selected.question],
+        handleCloseModal,
+        modalRef as React.RefObject<HTMLDivElement>
       )}
     </div>
   );

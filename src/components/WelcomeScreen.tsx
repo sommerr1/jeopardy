@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Player } from '../types';
+import { Player, GameType } from '../types';
 import { fetchSheetsList } from '../utils/fetchQuestions';
 
 type Props = {
@@ -7,9 +7,11 @@ type Props = {
   onSelectPlayer: (name: string) => void;
   onAddNewPlayer: (name: string) => void;
   onSelectSheet: (sheetName: string) => void;
+  gameType: GameType;
+  onBackToGameType?: () => void;
 };
 
-export function WelcomeScreen({ players, onSelectPlayer, onAddNewPlayer, onSelectSheet }: Props) {
+export function WelcomeScreen({ players, onSelectPlayer, onAddNewPlayer, onSelectSheet, gameType, onBackToGameType }: Props) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [sheets, setSheets] = useState<{id: number, name: string}[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
@@ -48,10 +50,38 @@ export function WelcomeScreen({ players, onSelectPlayer, onAddNewPlayer, onSelec
     return b.level - a.level;
   });
 
+  const getGameTypeInfo = (type: GameType) => {
+    const gameTypeMap = {
+      'classic': { name: 'Классическая игра', icon: '🎯', color: 'text-blue-600' },
+      'time-attack': { name: 'Игра на время', icon: '⏰', color: 'text-orange-600' },
+      'survival': { name: 'Режим выживания', icon: '💀', color: 'text-red-600' },
+      'team': { name: 'Командная игра', icon: '👥', color: 'text-green-600' },
+      'automata': { name: 'Автоматы', icon: '🤖', color: 'text-purple-600' }
+    };
+    return gameTypeMap[type];
+  };
+
+  const gameTypeInfo = getGameTypeInfo(gameType);
+
   return (
     <div className="min-h-screen bg-blue-100 flex flex-col justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-6">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-4">Jeopardy!</h1>
+      <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-6 relative">
+        {onBackToGameType && (
+          <button
+            onClick={onBackToGameType}
+            className="absolute top-4 left-4 text-gray-500 hover:text-gray-700 transition-colors"
+            title="Вернуться к выбору типа игры"
+          >
+            ← Назад
+          </button>
+        )}
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">Jeopardy!</h1>
+        <div className="text-center mb-6">
+          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 ${gameTypeInfo.color}`}>
+            <span className="text-lg">{gameTypeInfo.icon}</span>
+            <span className="font-semibold text-sm">{gameTypeInfo.name}</span>
+          </div>
+        </div>
         <p className="text-center text-gray-600 mb-6">Выберите лист для игры.</p>
         {loading ? (
           <div className="text-center text-gray-500 mb-4">Загрузка...</div>

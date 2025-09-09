@@ -39,7 +39,7 @@ export function ScoreBoard({ player, score, total, showCoin = 0, onCoinAnimation
   }, [scoreRef.current]);
 
   return (
-    <div className="relative mt-4 mb-2 text-lg font-semibold flex items-center justify-center min-h-[40px]">
+    <div className="relative mt-4 mb-2 text-lg font-semibold flex items-center justify-center min-h-[40px]" data-testid="score-board">
       <span className="mr-8 text-green-700 font-bold">Имя: {playerName}</span>
       {/* Removed image to the left of Level */}
       <span className="mr-8 text-blue-700 font-bold">Уровень: {level}</span>
@@ -92,7 +92,7 @@ export function ScoreBoard({ player, score, total, showCoin = 0, onCoinAnimation
       <span ref={scoreRef}>
         Вопросы: {score} / {total}
         {" "}
-        <span className="ml-4">Очки: {coins}</span>
+        <span className="ml-4" data-testid="player-score">Очки: {coins}</span>
       </span>
       <Hearts hp={hp} showPlusOne={showPlusOne} />
     </div>
