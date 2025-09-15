@@ -15,7 +15,7 @@ export const ENVIRONMENT = {
 
 // Настройки API в зависимости от окружения
 export const API_CONFIG = {
-  useProxy: ENVIRONMENT.isLocalhost && ENVIRONMENT.isDevelopment,
+  useProxy: true, // Принудительно используем прокси для локальной разработки
   useNetlifyFunctions: ENVIRONMENT.isNetlify || (!ENVIRONMENT.isLocalhost && ENVIRONMENT.isProduction),
   useDirectApi: false // Google Sheets API не поддерживает CORS
 } as const;

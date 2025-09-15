@@ -113,6 +113,8 @@ export default function App() {
     }
   }, [selectedGameType]);
 
+  // Предзагрузка отключена - используется только в WelcomeScreen для избежания конфликтов
+
   // Новый хук для работы с вопросами
   const {
     questions,

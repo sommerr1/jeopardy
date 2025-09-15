@@ -3,8 +3,21 @@ const express = require('express');
 const fetch = require('node-fetch'); // npm install node-fetch@2
 const app = express();
 
-const { SPREADSHEET_API_URL: API_URL } = require('./src/utils/spreadsheetApiUrl.ts');
-// NOTE: Ссылка на API теперь вынесена в src/utils/spreadsheetApiUrl.ts/js для использования в TypeScript- и JS-коде.
+// URL Google Sheets API (дублируем из TypeScript файла)
+const API_URL = "https://script.google.com/macros/s/AKfycbyuSFRlzih7IMI5Y4myMrftNjrRBzxK_QiaCw0HtcJkhSx6u42kJgPKB2DiO1iMdQkaYw/exec";
+
+// CORS middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 app.get('/api/questions', async (req, res) => {
   try {
@@ -16,7 +29,6 @@ app.get('/api/questions', async (req, res) => {
     
     const response = await fetch(url);
     const data = await response.text();
-    res.set('Access-Control-Allow-Origin', '*');
     res.type('application/json').send(data);
   } catch (err) {
     console.error('❌ Proxy error:', err);
