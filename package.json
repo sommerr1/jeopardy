@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "proxy": "node proxy.js",
+    "proxy": "node proxy.cjs",
     "browser-tools-server": "npx @agentdeskai/browser-tools-server@1.2.1",
     "start": "npm-run-all --parallel dev proxy browser-tools-server",
     "start:local": "npm-run-all --parallel dev proxy",
