@@ -375,10 +375,10 @@ export default function App() {
         const levelPart = parts[parts.length - 1].split('.')[0];
         return Number(levelPart) === level;
       });
-      return match ? `/src/images/${match}` : `/src/images/${availableImages[0]}`;
+      return match ? `/images/${match}` : `/images/${availableImages[0]}`;
     }
     // For level 53 and above, use the last image as fallback
-    return `/src/images/${availableImages[availableImages.length - 1]}`;
+    return `/images/${availableImages[availableImages.length - 1]}`;
   };
 
   // --- ОБРАБОТЧИКИ ДЛЯ WELCOME SCREEN ---
