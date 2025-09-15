@@ -463,7 +463,7 @@ export default function App() {
           console.log('Выбран лист:', sheetName);
           console.log('Игроки до:', players);
           setSelectedSheet(sheetName);
-          setQuestions([]);
+          // Убираем setQuestions([]) - хук useQuestions сам обработает смену листа
           // (здесь можно обновлять nameOfSheet у игроков)
           // setPlayers(players => players.map(p => ({ ...p, nameOfSheet: sheetName })));
           setTimeout(() => {

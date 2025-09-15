@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Question } from "../types";
 import { fetchQuestionsFromSheet } from "../utils/fetchQuestions";
 
@@ -6,14 +6,64 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentRows, setCurrentRows] = useState<string[]>([]);
   const [usedRows, setUsedRows] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Ref для отслеживания текущего запроса
+  const currentRequestRef = useRef<AbortController | null>(null);
+  const lastFetchedSheetRef = useRef<string | null>(null);
 
   // Загрузка вопросов при смене листа
   useEffect(() => {
-    if (selectedSheet) {
-      fetchQuestionsFromSheet(selectedSheet).then(setQuestions);
-    } else {
-      setQuestions([]);
+    // Отменяем предыдущий запрос, если он есть
+    if (currentRequestRef.current) {
+      currentRequestRef.current.abort();
     }
+
+    if (selectedSheet && selectedSheet !== lastFetchedSheetRef.current) {
+      setLoading(true);
+      setError(null);
+      
+      // Создаем новый AbortController для этого запроса
+      const controller = new AbortController();
+      currentRequestRef.current = controller;
+      lastFetchedSheetRef.current = selectedSheet;
+
+      fetchQuestionsFromSheet(selectedSheet, controller.signal)
+        .then((data) => {
+          // Проверяем, не был ли запрос отменен
+          if (!controller.signal.aborted) {
+            setQuestions(data);
+            setError(null);
+          }
+        })
+        .catch((err) => {
+          // Проверяем, не был ли запрос отменен
+          if (!controller.signal.aborted) {
+            console.error('Error fetching questions:', err);
+            setError(err instanceof Error ? err.message : 'Ошибка загрузки вопросов');
+            setQuestions([]);
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setLoading(false);
+          }
+        });
+    } else if (!selectedSheet) {
+      setQuestions([]);
+      setError(null);
+      setLoading(false);
+      lastFetchedSheetRef.current = null;
+    }
+
+    // Cleanup функция
+    return () => {
+      if (currentRequestRef.current) {
+        currentRequestRef.current.abort();
+        currentRequestRef.current = null;
+      }
+    };
   }, [selectedSheet]);
 
   // Выбор категорий при смене игрока, вопросов или использованных рядов
@@ -82,5 +132,7 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
     nextQuestions,
     resetQuestions,
     setQuestions, // на случай, если потребуется ручная установка
+    loading,
+    error,
   };
 } 
