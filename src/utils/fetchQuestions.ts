@@ -1,20 +1,36 @@
 import type { Question } from "../types";
-import { SPREADSHEET_API_URL } from "./spreadsheetApiUrl";
-
-const LOCAL_PROXY_URL = "http://localhost:3001/api/questions";
-const USE_PROXY = false; // теперь работаем только с Google API
+import { getApiUrl, ENVIRONMENT } from "./environment";
 
 export async function fetchSheetsList(): Promise<{id: number, name: string}[]> {
-  const url = `${SPREADSHEET_API_URL}?getsheets=1`;
+  const url = getApiUrl('questions', { getsheets: '1' });
+  
+  if (ENVIRONMENT.isDevelopment) {
+    console.log('📋 Fetching sheets list from:', url);
+  }
+  
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Ошибка загрузки списка листов');
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('❌ Error fetching sheets list:', errorText);
+    throw new Error(`Ошибка загрузки списка листов: ${res.status} ${res.statusText}`);
+  }
   return await res.json();
 }
 
 export async function fetchQuestionsFromSheet(sheetName: string): Promise<Question[]> {
-  const url = `${SPREADSHEET_API_URL}?name=${encodeURIComponent(sheetName)}`;
+  const url = getApiUrl('questions', { name: sheetName });
+  
+  if (ENVIRONMENT.isDevelopment) {
+    console.log('❓ Fetching questions from sheet:', sheetName, 'URL:', url);
+  }
+  
   const res = await fetch(url);
-  if (!res.ok) throw new Error('Ошибка загрузки вопросов');
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error('❌ Error fetching questions:', errorText);
+    throw new Error(`Ошибка загрузки вопросов: ${res.status} ${res.statusText}`);
+  }
+  
   const data = await res.json();
   return data.map((q: any) => ({
     ...q,
