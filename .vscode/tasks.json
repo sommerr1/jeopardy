@@ -14,7 +14,7 @@
       {
         "label": "Start Jeopardy Proxy",
         "type": "shell",
-        "command": "node proxy.js",
+        "command": "npm run proxy",
         "options": {
           "cwd": "${workspaceFolder}"
         },

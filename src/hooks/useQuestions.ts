@@ -18,9 +18,11 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
     // Отменяем предыдущий запрос, если он есть
     if (currentRequestRef.current) {
       currentRequestRef.current.abort();
+      currentRequestRef.current = null;
     }
 
     if (selectedSheet && selectedSheet !== lastFetchedSheetRef.current) {
+      console.log('🔄 Loading questions for sheet:', selectedSheet);
       setLoading(true);
       setError(null);
       
@@ -33,16 +35,21 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
         .then((data) => {
           // Проверяем, не был ли запрос отменен
           if (!controller.signal.aborted) {
+            console.log('✅ Questions loaded successfully:', data.length);
             setQuestions(data);
             setError(null);
+          } else {
+            console.log('🚫 Request was aborted, ignoring response');
           }
         })
         .catch((err) => {
           // Проверяем, не был ли запрос отменен
           if (!controller.signal.aborted) {
-            console.error('Error fetching questions:', err);
+            console.error('❌ Error fetching questions:', err);
             setError(err instanceof Error ? err.message : 'Ошибка загрузки вопросов');
             setQuestions([]);
+          } else {
+            console.log('🚫 Request was aborted, ignoring error');
           }
         })
         .finally(() => {
@@ -51,6 +58,7 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
           }
         });
     } else if (!selectedSheet) {
+      console.log('🔄 No sheet selected, clearing questions');
       setQuestions([]);
       setError(null);
       setLoading(false);
@@ -60,6 +68,7 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
     // Cleanup функция
     return () => {
       if (currentRequestRef.current) {
+        console.log('🧹 Cleaning up request controller');
         currentRequestRef.current.abort();
         currentRequestRef.current = null;
       }

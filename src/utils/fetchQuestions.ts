@@ -155,6 +155,8 @@ export async function fetchQuestionsFromSheet(sheetName: string, signal?: AbortS
       console.log('❓ Request already in progress for sheet:', sheetName, 'cancelling previous request');
     }
     existingRequest.abort();
+    // Небольшая задержка, чтобы предыдущий запрос успел отмениться
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
   
   if (ENVIRONMENT.isDevelopment) {

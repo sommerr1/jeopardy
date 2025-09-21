@@ -1,8 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Получаем абсолютный путь к директории проекта
-set "PROJECT_DIR=%~dp0"
+REM Получаем абсолютный путь к директории проекта (на уровень выше)
+set "PROJECT_DIR=%~dp0.."
 set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 
 echo ========================================

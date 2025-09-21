@@ -27,7 +27,9 @@
     "test:homepage": "playwright test --config=playwright.config.refactored.ts refactored-homepage.spec.ts",
     "test:gameflow": "playwright test --config=playwright.config.refactored.ts refactored-game-flow.spec.ts",
     "test:report": "playwright show-report",
-    "test:install": "playwright install"
+    "test:install": "playwright install",
+    "check:status": "powershell -ExecutionPolicy Bypass -File runtasks/check-status.ps1",
+    "check:quick": "powershell -ExecutionPolicy Bypass -File runtasks/quick-check.ps1"
   },
   "dependencies": {
     "@react-three/drei": "^9.102.6",

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { fetchQuestionsFromSheet } from "./utils/fetchQuestions";
 import { WelcomeScreen } from "./components/WelcomeScreen";
 import { GameBoard } from "./components/GameBoard";
 import { QuestionModal } from "./components/QuestionModal";

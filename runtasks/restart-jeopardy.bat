@@ -18,12 +18,12 @@ timeout /t 3 /nobreak >nul
 
 echo.
 echo [3/5] Запуск прокси сервера...
-start "Jeopardy Proxy" cmd /c "node proxy.js"
+start "Jeopardy Proxy" cmd /c "cd /d \"%~dp0..\" && node proxy.cjs"
 timeout /t 2 /nobreak >nul
 
 echo.
 echo [4/5] Запуск основного приложения...
-start "Jeopardy App" cmd /c "npm run dev"
+start "Jeopardy App" cmd /c "cd /d \"%~dp0..\" && npm run dev"
 timeout /t 5 /nobreak >nul
 
 echo.
@@ -54,6 +54,6 @@ echo Откройте браузер и перейдите по адресу:
 echo http://localhost:5173
 echo.
 echo Для остановки сервисов используйте:
-echo stop-jeopardy.bat
+echo runtasks\stop-jeopardy.bat
 echo.
 pause
