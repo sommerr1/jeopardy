@@ -85,13 +85,15 @@ async function performSheetsRequest(): Promise<{id: number, name: string}[]> {
   
   const url = getApiUrl('questions', { getsheets: '1' });
   
-  if (ENVIRONMENT.isDevelopment) {
+  if (ENVIRONMENT.isDevelopment || ENVIRONMENT.isNetlify) {
     console.log('📋 Fetching sheets list from:', url);
     console.log('🔧 Environment info:', {
       isDevelopment: ENVIRONMENT.isDevelopment,
+      isNetlify: ENVIRONMENT.isNetlify,
       isLocalhost: ENVIRONMENT.isLocalhost,
       hostname: ENVIRONMENT.hostname,
-      useProxy: true
+      useProxy: API_CONFIG.useProxy,
+      useNetlifyFunctions: API_CONFIG.useNetlifyFunctions
     });
     console.log('🌐 Full request details:', {
       url,
@@ -130,7 +132,7 @@ async function performSheetsRequest(): Promise<{id: number, name: string}[]> {
   } catch (error) {
     clearTimeout(timeoutId);
     
-    if (ENVIRONMENT.isDevelopment) {
+    if (ENVIRONMENT.isDevelopment || ENVIRONMENT.isNetlify) {
       console.error('❌ Detailed error info:', {
         error,
         errorName: error instanceof Error ? error.name : 'Unknown',
@@ -164,7 +166,7 @@ export async function fetchQuestionsFromSheet(sheetName: string, signal?: AbortS
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   
-  if (ENVIRONMENT.isDevelopment) {
+  if (ENVIRONMENT.isDevelopment || ENVIRONMENT.isNetlify) {
     console.log('❓ Fetching questions from sheet:', sheetName, 'URL:', url);
   }
   
@@ -212,7 +214,7 @@ export async function fetchQuestionsFromSheet(sheetName: string, signal?: AbortS
   } catch (error) {
     clearTimeout(timeoutId);
     
-    if (ENVIRONMENT.isDevelopment) {
+    if (ENVIRONMENT.isDevelopment || ENVIRONMENT.isNetlify) {
       console.error('❌ Detailed error info for questions:', {
         error,
         errorName: error instanceof Error ? error.name : 'Unknown',

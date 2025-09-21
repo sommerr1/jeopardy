@@ -7,7 +7,9 @@ export const ENVIRONMENT = {
   isProduction: import.meta.env.PROD,
   isNetlify: window.location.hostname.includes('netlify.app') || 
              window.location.hostname.includes('netlify.com') ||
-             window.location.hostname.includes('netlify'),
+             window.location.hostname.includes('netlify') ||
+             window.location.hostname.includes('deploy-preview') ||
+             window.location.hostname.includes('branch-deploy'),
   isLocalhost: window.location.hostname === 'localhost' || 
                window.location.hostname === '127.0.0.1',
   mode: import.meta.env.MODE,
