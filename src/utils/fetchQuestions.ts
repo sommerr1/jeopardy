@@ -1,5 +1,5 @@
 import type { Question } from "../types";
-import { getApiUrl, ENVIRONMENT } from "./environment";
+import { getApiUrl, ENVIRONMENT, API_CONFIG } from "./environment";
 
 // Кэш для списка листов
 const SHEETS_CACHE_KEY = 'jeopardy_sheets_cache';
