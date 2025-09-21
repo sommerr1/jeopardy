@@ -7,6 +7,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 минут
 
 // Флаги для предотвращения одновременных запросов
 let isFetchingSheets = false;
+let sheetsRequestPromise: Promise<{id: number, name: string}[]> | null = null;
 const activeRequests = new Map<string, AbortController>();
 
 interface CachedSheets {
@@ -60,23 +61,27 @@ export async function fetchSheetsList(useCache: boolean = true): Promise<{id: nu
     }
   }
 
-  // Предотвращаем одновременные запросы
-  if (isFetchingSheets) {
+  // Если уже есть активный запрос, возвращаем его Promise
+  if (sheetsRequestPromise) {
     if (ENVIRONMENT.isDevelopment) {
-      console.log('📋 Sheets request already in progress, waiting...');
+      console.log('📋 Sheets request already in progress, reusing promise...');
     }
-    // Ждем завершения текущего запроса
-    while (isFetchingSheets) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    // После завершения проверяем кэш еще раз
-    const cached = getCachedSheets();
-    if (cached) {
-      return cached;
-    }
+    return sheetsRequestPromise;
   }
 
-  isFetchingSheets = true;
+  // Создаем новый запрос
+  sheetsRequestPromise = performSheetsRequest();
+  
+  try {
+    const result = await sheetsRequestPromise;
+    return result;
+  } finally {
+    // Очищаем Promise после завершения
+    sheetsRequestPromise = null;
+  }
+}
+
+async function performSheetsRequest(): Promise<{id: number, name: string}[]> {
   
   const url = getApiUrl('questions', { getsheets: '1' });
   

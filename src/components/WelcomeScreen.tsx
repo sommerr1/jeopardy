@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Player, GameType } from '../types';
-import { fetchSheetsList } from '../utils/fetchQuestions';
 
 type Props = {
   players: Player[];
@@ -14,35 +13,13 @@ type Props = {
 export function WelcomeScreen({ players, onSelectPlayer, onAddNewPlayer, onSelectSheet, gameType, onBackToGameType }: Props) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedSheet, setSelectedSheet] = useState<string>('');
-  const [availableSheets, setAvailableSheets] = useState<{id: number, name: string}[]>([]);
-  const [sheetsLoading, setSheetsLoading] = useState(true);
-  const [sheetsError, setSheetsError] = useState<string | null>(null);
 
-  // Загружаем список листов при монтировании компонента
-  useEffect(() => {
-    const loadSheets = async () => {
-      try {
-        setSheetsLoading(true);
-        setSheetsError(null);
-        const sheets = await fetchSheetsList();
-        setAvailableSheets(sheets);
-        console.log('📋 Loaded sheets:', sheets);
-      } catch (error) {
-        console.error('❌ Error loading sheets:', error);
-        setSheetsError(error instanceof Error ? error.message : 'Ошибка загрузки списка листов');
-        // Fallback к захардкоженному списку в случае ошибки
-        setAvailableSheets([
-          { id: 0, name: 'Rus_4' },
-          { id: 762255340, name: 'Rus_2' },
-          { id: 1649098295, name: 'Rus_3' }
-        ]);
-      } finally {
-        setSheetsLoading(false);
-      }
-    };
-
-    loadSheets();
-  }, []);
+  // Список доступных листов (можно расширить в будущем)
+  const availableSheets = [
+    { id: 0, name: 'Rus_4' },
+    { id: 762255340, name: 'Rus_2' },
+    { id: 1649098295, name: 'Rus_3' }
+  ];
 
   const handleSheetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedSheet(e.target.value);
@@ -104,24 +81,14 @@ export function WelcomeScreen({ players, onSelectPlayer, onAddNewPlayer, onSelec
            <select
              value={selectedSheet}
              onChange={handleSheetChange}
-             disabled={sheetsLoading}
-             className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+             className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
            >
-             <option value="">
-               {sheetsLoading ? 'Загрузка листов...' : 'Выберите лист'}
-             </option>
+             <option value="">Выберите лист</option>
              {availableSheets.map((sh) => (
                <option key={sh.id} value={sh.name}>{sh.name}</option>
              ))}
            </select>
          </div>
-         {sheetsError && (
-           <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 rounded-md">
-             <p className="text-yellow-800 text-sm">
-               ⚠️ {sheetsError}. Используется резервный список листов.
-             </p>
-           </div>
-         )}
         <p className="text-center text-gray-600 mb-6">Введите имя, чтобы создать нового игрока, или выберите из списка.</p>
         <div className="flex gap-2 mb-6">
           <input
