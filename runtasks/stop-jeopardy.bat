@@ -1,4 +1,6 @@
 @echo off
+REM Устанавливаем UTF-8, чтобы избежать кракозябр в терминале VS Code/PowerShell
+chcp 65001 >nul
 
 echo ========================================
 echo    Language Jeopardy - Остановка серверов

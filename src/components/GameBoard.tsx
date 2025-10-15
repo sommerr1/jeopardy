@@ -20,8 +20,7 @@ function GameCell({ q, answered, isWrong, isCorrect, onSelect }: {
 }) {
   return (
     <button
-      style={{ width: q && (!answered || isWrong) ? '72%' : '60%' }}
-      className={`cell-btn ${q && !answered ? "bg-white hover:bg-blue-100" : "bg-gray-200 cursor-not-allowed"} ${isWrong ? "border-4 border-red-500" : isCorrect ? "border-4 border-green-500" : ""}`}
+      className={`w-full cell-btn ${q && !answered ? "bg-white hover:bg-blue-100" : "bg-gray-200 cursor-not-allowed"} ${isWrong ? "border-4 border-red-500" : isCorrect ? "border-4 border-green-500" : ""}`}
       disabled={!q || answered}
       onClick={() => q && onSelect(q)}
       data-testid={q ? "question-cell" : "empty-cell"}
@@ -45,8 +44,12 @@ function CategoryRow({ cat, difficulties, questions, answered, wronganswersstr, 
   onSelect: (q: Question) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 mt-2" key={cat}>
-      <div className="font-semibold">{cat}</div>
+    <div
+      className="grid gap-0 mt-2"
+      key={cat}
+      style={{ gridTemplateColumns: `minmax(56px, max-content) repeat(${difficulties.length}, minmax(48px, 1fr))` }}
+    >
+      <div className="font-semibold pr-3">{cat}</div>
       {difficulties.map((diff) => {
         const q = questions.find(
           (q) => q.category === cat && q.difficulty === diff
@@ -109,8 +112,11 @@ export function GameBoard({ questions, answered, onSelect, wronganswersstr = "",
     <div className="w-full max-w-3xl mt-4 flex flex-col md:flex-row px-2" data-testid="game-board">
       <div className="flex-1">
         <div className="overflow-x-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 min-w-[560px] sm:min-w-0">
-            <div></div>
+          <div
+            className="grid gap-0 min-w-[420px] sm:min-w-0"
+            style={{ gridTemplateColumns: `minmax(56px, max-content) repeat(${difficulties.length}, minmax(48px, 1fr))` }}
+          >
+            <div className="pr-3"></div>
             {difficulties.map((d) => (
               <div key={d} className="flex justify-center font-bold items-center h-12">{d}</div>
             ))}

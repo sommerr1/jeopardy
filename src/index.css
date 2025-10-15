@@ -31,13 +31,14 @@
 /* На мобильных делаем картинку на фоне под доской, полупрозрачной */
 @media (max-width: 640px) {
   .level-image {
-    top: 0;
-    right: 0;
-    left: 0;
+    position: static;
+    top: auto;
+    right: auto;
+    left: auto;
     justify-content: center;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.3;
+    opacity: 0.5;
   }
   .level-image img {
     width: 70vw;
@@ -55,4 +56,5 @@
   h1 { @apply text-2xl; }
   h2 { @apply text-xl; }
   .btn-main { @apply py-2 px-4; }
+  .cell-btn { @apply h-12 text-sm; }
 }

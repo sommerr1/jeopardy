@@ -8,11 +8,13 @@ interface HeartsProps {
 
 export const Hearts: React.FC<HeartsProps> = ({ hp, showPlusOne }) => (
   <span className="ml-4 flex items-center relative" data-testid="player-lives">
-    {Array.from({ length: hp }).map((_, i) => (
-      <span key={i} className="text-2xl text-red-500">
-        {'❤️'}
-      </span>
-    ))}
+    <span className="grid grid-cols-10 gap-x-1 gap-y-1 md:flex md:gap-0">
+      {Array.from({ length: hp }).map((_, i) => (
+        <span key={i} className="text-2xl text-red-500">
+          {'❤️'}
+        </span>
+      ))}
+    </span>
     <AnimatePresence>
       {showPlusOne && (
         <motion.div

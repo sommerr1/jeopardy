@@ -529,7 +529,10 @@ export default function App() {
       )}
       
       {showModelTest && <ModelTest />}
-      <LevelImage src={getLevelImage()} alt={`Level ${level}`} />
+      {/* Десктоп/таблет: картинка сверху справа как была */}
+      <div className="hidden md:block">
+        <LevelImage src={getLevelImage()} alt={`Level ${level}`} />
+      </div>
       
       {currentPlayer && currentRenderer.renderScore(
         currentPlayer,
@@ -547,9 +550,27 @@ export default function App() {
         handleSelect,
         wronganswersstr
       )}
-      
+
+      {/* Мобильная версия: кнопка под таблицей */}
       {canShowNextButton && (
-        <div className="mt-4">
+        <div className="mt-3 w-full flex justify-center md:hidden">
+          <button
+            onClick={handleNextQuestions}
+            className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-colors"
+          >
+            Следующие вопросы
+          </button>
+        </div>
+      )}
+
+      {/* Мобильная версия: опускаем картинку под таблицу */}
+      <div className="md:hidden w-full flex justify-center mt-4">
+        <LevelImage src={getLevelImage()} alt={`Level ${level}`} />
+      </div>
+      
+      {/* Десктоп/планшет: кнопка как раньше */}
+      {canShowNextButton && (
+        <div className="mt-4 hidden md:block">
           <button
             onClick={handleNextQuestions}
             className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-colors"
