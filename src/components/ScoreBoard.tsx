@@ -93,8 +93,8 @@ export function ScoreBoard({ player, score, total, showCoin = 0, onCoinAnimation
           );
         })}
       </AnimatePresence>
-      <div className="flex items-center justify-center gap-4 mt-1">
-        <span ref={scoreRef} className="" data-testid="player-score">Очки: {coins}</span>
+      <div className="flex items-center justify-center gap-4 mt-1 w-full">
+        <span ref={scoreRef} className="text-center" data-testid="player-score">Очки: {coins}</span>
         <Hearts hp={hp} showPlusOne={showPlusOne} />
       </div>
     </div>

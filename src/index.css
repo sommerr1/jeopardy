@@ -38,7 +38,7 @@
     justify-content: center;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.5;
+    opacity: 0.7;
   }
   .level-image img {
     width: 70vw;
