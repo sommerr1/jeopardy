@@ -106,28 +106,30 @@ export function GameBoard({ questions, answered, onSelect, wronganswersstr = "",
   };
 
   return (
-    <div className="w-full max-w-3xl mt-8 flex" data-testid="game-board">
+    <div className="w-full max-w-3xl mt-4 flex flex-col md:flex-row px-2" data-testid="game-board">
       <div className="flex-1">
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-0">
-          <div></div>
-          {difficulties.map((d) => (
-            <div key={d} className="flex justify-center font-bold items-center h-12">{d}</div>
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-0 min-w-[560px] sm:min-w-0">
+            <div></div>
+            {difficulties.map((d) => (
+              <div key={d} className="flex justify-center font-bold items-center h-12">{d}</div>
+            ))}
+          </div>
+          {categories.map((cat) => (
+            <CategoryRow
+              key={cat}
+              cat={cat}
+              difficulties={difficulties}
+              questions={questions}
+              answered={answered}
+              wronganswersstr={wronganswersstr}
+              onSelect={onSelect}
+            />
           ))}
         </div>
-        {categories.map((cat) => (
-          <CategoryRow
-            key={cat}
-            cat={cat}
-            difficulties={difficulties}
-            questions={questions}
-            answered={answered}
-            wronganswersstr={wronganswersstr}
-            onSelect={onSelect}
-          />
-        ))}
       </div>
-      <div className="w-72 ml-6 flex flex-col items-start">
-        <div className="text-sm">
+      <div className="w-full md:w-72 md:ml-6 mt-4 md:mt-0 flex flex-col items-start">
+        <div className="text-sm w-full">
           {wronganswersstr && renderWrongAnswers(wronganswersstr)}
         </div>
       </div>

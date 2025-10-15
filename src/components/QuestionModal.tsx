@@ -32,24 +32,24 @@ export function QuestionModal({ question, onAnswer, answered, onClose, modalRef 
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-2 sm:p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       onClick={handleOverlayClick}
     >
       <motion.div
         ref={modalRef}
-        className="bg-white rounded-xl p-8 shadow-lg w-full max-w-md"
+        className="bg-white rounded-xl p-5 sm:p-8 shadow-lg w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}
         onClick={e => e.stopPropagation()}
       >
-        <h2 className="text-xl font-bold mb-4">{question.question}</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <h2 className="text-lg sm:text-xl font-bold mb-4">{question.question}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
           {question.options.map((opt) => (
             <button
               key={opt}
-              className={`py-2 px-4 rounded-lg border font-semibold transition
+              className={`py-3 px-4 rounded-lg border font-semibold transition text-sm sm:text-base
                 ${
                   selected
                     ? opt === question.correct
@@ -76,7 +76,7 @@ export function QuestionModal({ question, onAnswer, answered, onClose, modalRef 
             {question.rate && (
               <p className="text-sm text-blue-700 mt-2">Рейт: {question.rate}</p>
             )}
-            <p className="text-xs text-gray-400 mt-2">Кликните вне окна, чтобы продолжить</p>
+            <p className="text-xs text-gray-400 mt-2">Коснитесь вне окна, чтобы продолжить</p>
           </div>
         )}
       </motion.div>
