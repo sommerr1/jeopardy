@@ -39,10 +39,14 @@ export function ScoreBoard({ player, score, total, showCoin = 0, onCoinAnimation
   }, [scoreRef.current]);
 
   return (
-    <div className="relative mt-4 mb-2 text-lg font-semibold flex items-center justify-center min-h-[40px]" data-testid="score-board">
-      <span className="mr-8 text-green-700 font-bold">Имя: {playerName}</span>
-      {/* Removed image to the left of Level */}
-      <span className="mr-8 text-blue-700 font-bold">Уровень: {level}</span>
+    <div className="relative mt-3 mb-2 font-semibold flex flex-col items-center justify-center min-h-[40px] text-base sm:text-lg" data-testid="score-board">
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+        <span className="text-green-700 font-bold">Имя: {playerName}</span>
+        <span className="text-blue-700 font-bold">Уровень: {level}</span>
+        <span>
+          Вопросы: {score} / {total}
+        </span>
+      </div>
       <AnimatePresence>
         {Array.from({ length: showCoin }).map((_, i) => {
           // fallback если нет координат
@@ -89,12 +93,10 @@ export function ScoreBoard({ player, score, total, showCoin = 0, onCoinAnimation
           );
         })}
       </AnimatePresence>
-      <span ref={scoreRef}>
-        Вопросы: {score} / {total}
-        {" "}
-        <span className="ml-4" data-testid="player-score">Очки: {coins}</span>
-      </span>
-      <Hearts hp={hp} showPlusOne={showPlusOne} />
+      <div className="flex items-center justify-center gap-4 mt-1">
+        <span ref={scoreRef} className="" data-testid="player-score">Очки: {coins}</span>
+        <Hearts hp={hp} showPlusOne={showPlusOne} />
+      </div>
     </div>
   );
 } 

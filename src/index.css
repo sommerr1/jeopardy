@@ -28,6 +28,24 @@
   align-items: center;
 }
 
+/* На мобильных делаем картинку на фоне под доской, полупрозрачной */
+@media (max-width: 640px) {
+  .level-image {
+    top: 0;
+    right: 0;
+    left: 0;
+    justify-content: center;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.3;
+  }
+  .level-image img {
+    width: 70vw;
+    height: auto;
+    filter: none;
+  }
+}
+
 .cell-btn {
   @apply h-14 sm:h-16 rounded-lg border flex flex-col items-center justify-center text-base sm:text-lg font-bold transition;
 }
