@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Question } from "../types";
 import { renderWrongAnswers } from '../utils/renderWrongAnswers';
+import { getQuestionKey, isQuestionWrongInLevel } from '../utils/questionUtils';
 
 type Props = {
   questions: Question[];
@@ -54,28 +55,13 @@ function CategoryRow({ cat, difficulties, questions, answered, wronganswersstr, 
         const q = questions.find(
           (q) => q.category === cat && q.difficulty === diff
         );
-        let isWrong = false;
-        if (q && wronganswersstr) {
-          // Проверяем, был ли дан неправильный ответ именно для этого вопроса
-          // Ищем паттерн, который содержит неправильный ответ для этого конкретного вопроса
-          const wrongAnswers = wronganswersstr.split(', ');
-          for (const wrongAnswer of wrongAnswers) {
-            if (wrongAnswer.includes(`(${q.correct})`)) {
-              // Проверяем, что это действительно неправильный ответ для этого вопроса
-              const wrongPart = wrongAnswer.split(' (')[0];
-              if (q.options.includes(wrongPart) && wrongPart !== q.correct) {
-                isWrong = true;
-                break;
-              }
-            }
-          }
-        }
-        const isCorrect = q && answered[q.question] && !isWrong;
+        const isWrong = q ? isQuestionWrongInLevel(q, wronganswersstr) : false;
+        const isCorrect = q && answered[getQuestionKey(q)] && !isWrong;
         return (
           <GameCell
             key={diff}
             q={q}
-            answered={!!(q && answered[q.question])}
+            answered={!!(q && answered[getQuestionKey(q)])}
             isWrong={isWrong}
             isCorrect={!!isCorrect}
             onSelect={onSelect}

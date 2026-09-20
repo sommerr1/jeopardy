@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react';
 import { GameRenderer, Question, Player } from '../types';
 import { renderWrongAnswers } from '../utils/renderWrongAnswers';
+import { getQuestionKey, isQuestionWrongInLevel } from '../utils/questionUtils';
 import { FullScreenModelRenderer, BottomModelRenderer } from './SimpleModelRenderer';
 
 // Компонент для 3D элемента
@@ -108,29 +109,14 @@ const AutomataGameBoard: React.FC<{
               const q = questions.find(
                 (q) => q.category === cat && q.difficulty === diff
               );
-              let isWrong = false;
-              if (q && wronganswersstr) {
-                // Проверяем, был ли дан неправильный ответ именно для этого вопроса
-                // Ищем паттерн, который содержит неправильный ответ для этого конкретного вопроса
-                const wrongAnswers = wronganswersstr.split(', ');
-                for (const wrongAnswer of wrongAnswers) {
-                  if (wrongAnswer.includes(`(${q.correct})`)) {
-                    // Проверяем, что это действительно неправильный ответ для этого вопроса
-                    const wrongPart = wrongAnswer.split(' (')[0];
-                    if (q.options.includes(wrongPart) && wrongPart !== q.correct) {
-                      isWrong = true;
-                      break;
-                    }
-                  }
-                }
-              }
-              const isCorrect = q && answered[q.question] && !isWrong;
+              const isWrong = q ? isQuestionWrongInLevel(q, wronganswersstr) : false;
+              const isCorrect = q && answered[getQuestionKey(q)] && !isWrong;
               
               return (
                 <button
                   key={diff}
                   className={`h-16 rounded-xl font-bold text-lg transition-all duration-300 transform hover:scale-105 ${
-                    !q || answered[q.question]
+                    !q || answered[getQuestionKey(q)]
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-gradient-to-br from-purple-400 to-purple-600 text-white hover:from-purple-500 hover:to-purple-700 shadow-lg hover:shadow-xl'
                   } ${
@@ -138,10 +124,10 @@ const AutomataGameBoard: React.FC<{
                   } ${
                     isCorrect ? 'border-4 border-green-500 bg-green-200' : ''
                   }`}
-                  disabled={!q || answered[q.question]}
+                  disabled={!q || answered[getQuestionKey(q)]}
                   onClick={() => q && onSelect(q)}
                 >
-                  {q && !answered[q.question] ? (
+                  {q && !answered[getQuestionKey(q)] ? (
                     <div className="flex flex-col items-center">
                       <span className="text-2xl">⚡</span>
                       <span className="text-sm">{q.rate || '?'}</span>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { GameRenderer, Question, Player } from '../types';
+import { getQuestionKey } from '../utils/questionUtils';
 
 export class MinimalRenderer implements GameRenderer {
   renderBoard(
@@ -25,7 +26,7 @@ export class MinimalRenderer implements GameRenderer {
             <div className="font-medium text-sm">{cat}</div>
             {difficulties.map(diff => {
               const q = questions.find(q => q.category === cat && q.difficulty === diff);
-              const isAnswered = q && answered[q.question];
+              const isAnswered = q && answered[getQuestionKey(q)];
               
               return (
                 <button

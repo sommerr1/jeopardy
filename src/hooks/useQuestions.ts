@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Question } from "../types";
 import { fetchQuestionsFromSheet } from "../utils/fetchQuestions";
+import { getBoardQuestions } from "../utils/questionUtils";
 
 export function useQuestions(selectedSheet: string | null, currentPlayerName: string | null) {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -99,9 +100,9 @@ export function useQuestions(selectedSheet: string | null, currentPlayerName: st
     setCurrentRows(selected);
   }, [currentPlayerName, usedRows, questions]);
 
-  // Получить вопросы текущих категорий
+  // Получить вопросы текущих категорий (как на доске — 1 на ячейку)
   const getCurrentQuestions = useCallback(() => {
-    return questions.filter(q => currentRows.includes(q.category));
+    return getBoardQuestions(questions, currentRows);
   }, [questions, currentRows]);
 
   // Получить все доступные категории

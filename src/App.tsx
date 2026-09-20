@@ -14,6 +14,7 @@ import { GameOverScreen } from './components/GameOverScreen';
 import { GameTypeSelector } from './components/GameTypeSelector';
 import { RendererFactory } from './renderers';
 import ModelTest from './components/ModelTest';
+import { getQuestionKey, getBoardQuestions, isQuestionWrongInLevel } from './utils/questionUtils';
 
 // --- ФУНКЦИИ ДЛЯ РАБОТЫ С COOKIE (теперь для JSON) ---
 function setCookie(name: string, value: any, days = 365) {
@@ -149,15 +150,15 @@ export default function App() {
 
   // --- DEBUG HANDLER ---
   const handleDebugAllButOne = () => {
-    const questionsToAnswer = questions.filter(
-      (q) => currentRows.includes(q.category) && !answered[q.question]
+    const questionsToAnswer = getBoardQuestions(questions, currentRows).filter(
+      (q) => !answered[getQuestionKey(q)]
     );
     const questionsToProcess = questionsToAnswer.slice(0, -1);
     if (questionsToProcess.length === 0) return;
     const newAnswered = { ...answered };
     let scoreToAdd = 0;
     questionsToProcess.forEach((q) => {
-      newAnswered[q.question] = true;
+      newAnswered[getQuestionKey(q)] = true;
       scoreToAdd += q.rate || 0;
     });
     setAnswered(newAnswered);
@@ -203,8 +204,12 @@ export default function App() {
     if (currentPlayerName) {
       const savedWrongAnswers = getCookie(getWrongAnswersCookieName());
       setWronganswersstr(savedWrongAnswers || ""); // Сбрасываем на пустую строку, если куки нет
+      setAnswered({});
+      setWronganswersCurrentLevel("");
     } else {
       setWronganswersstr(""); // Сбрасываем при выходе из игры
+      setAnswered({});
+      setWronganswersCurrentLevel("");
     }
   }, [currentPlayerName]);
 
@@ -214,7 +219,7 @@ export default function App() {
   const handleAnswer = (answer: string) => {
     if (!selected) return;
     const isCorrect = answer === selected.correct;
-    setAnswered((prev: { [key: string]: boolean }) => ({ ...prev, [selected.question]: true }));
+    setAnswered((prev: { [key: string]: boolean }) => ({ ...prev, [getQuestionKey(selected)]: true }));
     setScore((s: number) => s + (isCorrect ? 1 : 0));
     
     // Обновляем общую статистику вопросов
@@ -254,7 +259,8 @@ export default function App() {
     }
     // Проверяем, все ли вопросы из текущих 2 строк отвечены
     const currentQuestions = getCurrentQuestions();
-    const allAnswered = currentQuestions.every(q => answered[q.question] || (q.question === selected.question));
+    const selectedKey = getQuestionKey(selected);
+    const allAnswered = currentQuestions.every(q => answered[getQuestionKey(q)] || getQuestionKey(q) === selectedKey);
     if (allAnswered) {
       // Проверяем, были ли ошибки на этом уровне (только по wronganswersCurrentLevel)
       //const anyWrong = currentQuestions.some(q => wronganswersCurrentLevel.includes(`${q.question} (${q.correct})`));
@@ -288,10 +294,10 @@ export default function App() {
   const currentQuestions = getCurrentQuestions();
   
   // Все ли текущие вопросы отвечены
-  const allCurrentAnswered = currentQuestions.length > 0 && currentQuestions.every(q => answered[q.question]);
+  const allCurrentAnswered = currentQuestions.length > 0 && currentQuestions.every(q => answered[getQuestionKey(q)]);
 
   // Есть ли неверный ответ в текущем наборе
-  const anyWrongInCurrent = currentQuestions.some(q => wronganswersCurrentLevel.includes(`${q.question} (${q.correct})`));
+  const anyWrongInCurrent = currentQuestions.some(q => isQuestionWrongInLevel(q, wronganswersCurrentLevel));
 
   // Проверяем, остались ли ещё категории для новых вопросов
   const availableCategories = getAvailableCategories();
@@ -583,7 +589,7 @@ export default function App() {
       {selected && currentRenderer.renderQuestion(
         selected,
         handleAnswer,
-        answered[selected.question],
+        answered[getQuestionKey(selected)],
         handleCloseModal,
         modalRef as React.RefObject<HTMLDivElement>
       )}
